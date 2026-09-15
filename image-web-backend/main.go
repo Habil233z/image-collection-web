@@ -1,32 +1,29 @@
 package main
 
 import (
-	"context"
-	"log"
-	"os"
-
 	"image-web-backend/api/register"
+	"log"
+
+	"image-web-backend/resources/database"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	if err := godotenv.Load(); err != nil {
+		log.Println("Error loading .env file")
 	}
 
-	connStr := os.Getenv("DATABASE")
-
-	pool, err := pgxpool.New(context.Background(), connStr)
+	db, err := database.Database()
 	if err != nil {
-		log.Fatalf("unable to connect to database: %v", err)
+		log.Fatalf("Database connection failed: %v", err)
 	}
-	defer pool.Close()
+	defer db.Pool.Close()
+
+	handler := &register.Database{DB: db}
 
 	router := gin.Default()
-	router.POST("/register", register.Register)
+	router.POST("/register", handler.Register)
 	router.Run("localhost:8080")
 }

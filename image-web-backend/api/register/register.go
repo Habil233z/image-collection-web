@@ -4,12 +4,16 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
+
+	"image-web-backend/resources/database"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
+
+type Database struct {
+	DB *database.Postgres
+}
 
 type RegisterInput struct {
 	Id       int    `json:"id"`
@@ -18,27 +22,15 @@ type RegisterInput struct {
 	Password string `json:"password"`
 }
 
-func Register(c *gin.Context) {
+func (h *Database) Register(c *gin.Context) {
+	err := godotenv.Load()
 	var input RegisterInput
 
 	if err := c.BindJSON(&input); err != nil {
 		return
 	}
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	connStr := os.Getenv("DATABASE")
-
-	pool, err := pgxpool.New(context.Background(), connStr)
-	if err != nil {
-		log.Fatalf("unable to connect to database: %v", err)
-	}
-	defer pool.Close()
-
-	_, err = pool.Exec(context.Background(), "INSERT INTO users (email, username, password) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", input.Email, input.Username, input.Password)
+	_, err = h.DB.Pool.Query(context.Background(), "INSERT INTO users (email, username, password) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", input.Email, input.Username, input.Password)
 	if err != nil {
 		log.Fatalf("error inserting user: %v", err)
 	}
