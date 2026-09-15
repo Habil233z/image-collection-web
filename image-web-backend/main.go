@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image-web-backend/api/login"
 	"image-web-backend/api/register"
 	"log"
 
@@ -21,9 +22,11 @@ func main() {
 	}
 	defer db.Pool.Close()
 
-	handler := &register.Database{DB: db}
+	registerHandler := &register.Database{DB: db}
+	loginHandler := &login.Database{DB: db}
 
 	router := gin.Default()
-	router.POST("/register", handler.Register)
+	router.POST("/register", registerHandler.Register)
+	router.POST("/login", loginHandler.Login)
 	router.Run("localhost:8080")
 }
