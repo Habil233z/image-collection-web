@@ -2,6 +2,8 @@ package login
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 
@@ -16,16 +18,16 @@ type Database struct {
 }
 
 type LoginInput struct {
-	Id       int    `json:"id"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Id              int    `json:"id"`
+	EmailOrUsername string `json:"emailOrUsername"`
+	Password        string `json:"password"`
 }
 
 type User struct {
 	Id       int    `json:"id"`
 	Email    string `json:"email"`
 	Username string `json:"username"`
+	Password string `json:"-"`
 }
 
 func (h *Database) Login(c *gin.Context) {
@@ -37,12 +39,28 @@ func (h *Database) Login(c *gin.Context) {
 		return
 	}
 
-	err = h.DB.Pool.QueryRow(context.Background(), "SELECT id, email, username FROM users WHERE username = $1", input.Username).Scan(&user.Id, &user.Username, &user.Email)
+	err = h.DB.Pool.QueryRow(context.Background(), "SELECT * FROM users WHERE username = $1 OR email = $1", input.EmailOrUsername).Scan(&user.Id, &user.Username, &user.Email, &user.Password)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   "Rows not found",
+				"message": "User didn't exitst",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		log.Fatalf("error finding user: %v", err)
+		return
 	}
 
-	c.JSON(http.StatusFound, gin.H{
+	if input.Password != user.Password {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Password wrong",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
 		"message": "Login Success",
 		"data":    user,
 	})

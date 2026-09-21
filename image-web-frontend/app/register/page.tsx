@@ -4,14 +4,14 @@ import Link from "next/dist/client/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
-export default function Login() {
+export default function Register() {
     const [email, setEmail] = useState("")
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
 
     const router = useRouter()
 
-    function clickLogin() {
+    function clickRegister() {
         console.log(email, username, password)
         if (!email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i) || username.length <= 5 || password.length <= 8) {
             return alert("One of criteria is not fulfilled")
@@ -28,7 +28,7 @@ export default function Login() {
                     <input className="text-black" type="email" placeholder="Email" required value={email} onChange={(e) => setEmail(e.target.value)}/>
                     <input className="text-black" type="text" placeholder="Username" minLength={5} required value={username} onChange={(e) => setUsername(e.target.value)}/>
                     <input className="text-black mt-2" type="password" placeholder="Password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)}/>
-                    <button type="submit" onClick={clickLogin} className="text-black bg-gray-500 mt-4 px-3 py-2">Register</button>
+                    <button type="submit" onClick={clickRegister} className="text-black bg-gray-500 mt-4 px-3 py-2">Register</button>
                 </form>
                 <Link href="/login" className="bg-gray-200 text-black mt-4 px-3 py-4">Login</Link>
             </div>

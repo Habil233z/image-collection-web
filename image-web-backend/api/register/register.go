@@ -37,6 +37,6 @@ func (h *Database) Register(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Success",
-		"data":    input,
+		"data":    input.Username,
 	})
 }
