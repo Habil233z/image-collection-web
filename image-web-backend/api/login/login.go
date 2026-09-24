@@ -6,10 +6,13 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"image-web-backend/resources/database"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 )
 
@@ -28,6 +31,25 @@ type User struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
 	Password string `json:"-"`
+}
+
+type CustomClaims struct {
+	UserID string `json:"user_username"`
+	jwt.RegisteredClaims
+}
+
+func CreateToken(userID string) (string, error) {
+	secretKey := []byte(os.Getenv("SECRET_KEY"))
+	claims := CustomClaims{
+		UserID:    userID,
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		NotBefore: jwt.NewNumericDate(time.Now()),
+		Issuer:    "Image-Web",
+		Subject:   userID,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(secretKey)
 }
 
 func (h *Database) Login(c *gin.Context) {
@@ -60,8 +82,15 @@ func (h *Database) Login(c *gin.Context) {
 		return
 	}
 
+	token, err := CreateToken(user.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login Success",
+		"token":   token,
 		"data":    user,
 	})
 }
