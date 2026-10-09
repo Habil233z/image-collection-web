@@ -71,9 +71,23 @@ func (h *Database) Register(c *gin.Context) {
 		return
 	}
 
+	c.SetSameSite(http.SameSiteStrictMode)
+
+	maxAge := 2 * 60 * 60
+	isSecure := os.Getenv("GIN_MODE") == "release"
+
+	c.SetCookie(
+		"image-web-auth_token",
+		token,
+		maxAge,
+		"/",
+		"localhost",
+		isSecure,
+		true,
+	)
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Success",
-		"token":   token,
 		"data":    input.Username,
 	})
 }

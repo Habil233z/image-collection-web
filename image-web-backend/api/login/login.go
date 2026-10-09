@@ -12,7 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -53,15 +52,15 @@ func CreateToken(userID string) (string, error) {
 }
 
 func (h *Database) Login(c *gin.Context) {
-	err := godotenv.Load()
 	var input LoginInput
 	var user User
 
 	if err := c.BindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
-	err = h.DB.Pool.QueryRow(context.Background(), "SELECT * FROM users WHERE username = $1 OR email = $1", input.EmailOrUsername).Scan(&user.Id, &user.Username, &user.Email, &user.Password)
+	err := h.DB.Pool.QueryRow(context.Background(), "SELECT * FROM users WHERE username = $1 OR email = $1", input.EmailOrUsername).Scan(&user.Id, &user.Username, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -85,9 +84,23 @@ func (h *Database) Login(c *gin.Context) {
 		return
 	}
 
+	c.SetSameSite(http.SameSiteStrictMode)
+
+	maxAge := 2 * 60 * 60
+	isSecure := os.Getenv("GIN_MODE") == "release"
+
+	c.SetCookie(
+		"image-web-auth_token",
+		token,
+		maxAge,
+		"/",
+		"localhost",
+		isSecure,
+		true,
+	)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login Success",
-		"token":   token,
 		"data":    user,
 	})
 }

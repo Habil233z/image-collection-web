@@ -2,18 +2,21 @@
 
 import Link from "next/dist/client/link"
 import { useState } from "react"
+import { useRouter } from 'next/navigation'
 import api from "@/lib/api"
 
 export default function Login() {
     const [emailOrUsername, setEmailOrUsername] = useState("")
     const [password, setPassword] = useState("")
+    const router = useRouter()
 
     async function clickLogin(e: any) {
         e.preventDefault()
         console.log(emailOrUsername, password)
         try {
-            await api.post("http://localhost:8080/login", {emailOrUsername, password})
+            await api.post("http://localhost:8080/login", {emailOrUsername, password}, {withCredentials: true})
             console.log("Login successfull")
+            router.push("/")
         } catch (err) {
             alert("User didn't exist or wrong password")
             console.log(err)
