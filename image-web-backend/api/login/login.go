@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Database struct {
@@ -71,14 +71,11 @@ func (h *Database) Login(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-		log.Fatalf("error finding user: %v", err)
 		return
 	}
 
-	if input.Password != user.Password {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "Password wrong",
-		})
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Wrong Password"})
 		return
 	}
 

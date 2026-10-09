@@ -15,6 +15,7 @@ export default function Login() {
             await api.post("http://localhost:8080/login", {emailOrUsername, password})
             console.log("Login successfull")
         } catch (err) {
+            alert("User didn't exist or wrong password")
             console.log(err)
         }
         
