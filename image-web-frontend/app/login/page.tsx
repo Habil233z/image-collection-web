@@ -4,6 +4,8 @@ import Link from "next/dist/client/link"
 import { useState } from "react"
 import { useRouter } from 'next/navigation'
 import api from "@/lib/api"
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
 export default function Login() {
     const [emailOrUsername, setEmailOrUsername] = useState("")
@@ -25,16 +27,31 @@ export default function Login() {
     }
 
     return (
+        <>
         <div className="w-screen h-screen bg-gray-300 flex flex-col items-center justify-center">
-            <h1 className="text-center text-black mb-5 text-5xl">Login Page</h1>
-            <div className="h-100 w-150 bg-gray-50 flex flex-col">
-                <form className="flex flex-col items-center justify-center w-full h-full mt-5">
-                    <input className="text-black" type="text" placeholder="Email or Username" minLength={5} required onChange={(e) => setEmailOrUsername(e.target.value)} value={emailOrUsername} autoComplete="off"/>
-                    <input className="text-black mt-2" type="password" placeholder="Password" minLength={8} required onChange={(e) => setPassword(e.target.value)} value={password}/>
-                    <button className="text-black bg-gray-500 mt-4 px-3 py-2" onClick={e => {clickLogin(e)}}>Login</button>
-                </form>
-                <Link href="/register" className="bg-gray-200 text-black mt-4 px-3 py-4">Register</Link>
-            </div>
+            <Card className="min-h-[33%] min-w-[40%]">
+                <CardHeader>
+                    <CardTitle className="text-center text-4xl font-bold mt-6">Login</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col items-center w-full h-full">
+                        <form  className="flex flex-col items-center w-full h-full" autoComplete="off">
+                            <div className="w-[60%]">
+                                <h2 className="text-xl">Email or Username</h2>
+                                <input className="text-black border rounded-md text-xl pl-2 w-full" type="text" placeholder="Email or Username" minLength={5} required onChange={(e) => setEmailOrUsername(e.target.value)} value={emailOrUsername}/>
+                                <h2 className="text-xl">Password</h2>
+                                <input className="text-black border rounded-md text-xl pl-2 w-full" type="password" placeholder="Password" minLength={8} required onChange={(e) => setPassword(e.target.value)} value={password}/>
+                            </div>
+                            <Button className="m-4" onClick={e => {clickLogin(e)}}>Login</Button>
+                            <hr className="w-[60%]"></hr>
+                        </form>
+                        <div className="w-[60%] flex justify-end">
+                            <h3 className="text-xl pb-2 mt-4">didn't have an account?<Link href="/register"><Button>Register</Button></Link></h3>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
+        </>
     )
 }

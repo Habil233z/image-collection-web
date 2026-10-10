@@ -1,5 +1,7 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
 import Link from "next/dist/client/link"
 import { useRouter } from "next/navigation"
@@ -29,17 +31,33 @@ export default function Register() {
     }
 
     return (
+        <>
         <div className="w-screen h-screen bg-gray-300 flex flex-col items-center justify-center">
-            <h1 className="text-center text-black mb-5 text-5xl">Register Page</h1>
-            <div className="h-100 w-150 bg-gray-50 flex flex-col">
-                <form className="flex flex-col items-center justify-center w-full h-full mt-5" autoComplete="off">
-                    <input className="text-black" type="email" placeholder="Email" required value={email} onChange={(e) => setEmail(e.target.value)}/>
-                    <input className="text-black" type="text" placeholder="Username" minLength={5} required value={username} onChange={(e) => setUsername(e.target.value)}/>
-                    <input className="text-black mt-2" type="password" placeholder="Password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)}/>
-                    <button type="submit" onClick={e => {clickRegister(e)}} className="text-black bg-gray-500 mt-4 px-3 py-2">Register</button>
-                </form>
-                <Link href="/login" className="bg-gray-200 text-black mt-4 px-3 py-4">Login</Link>
-            </div>
+            <Card className="min-h-[33%] min-w-[40%]">
+                <CardHeader>
+                    <CardTitle className="text-center text-4xl font-bold mt-6">Register</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col items-center w-full h-full">
+                        <form  className="flex flex-col items-center w-full h-full" autoComplete="off">
+                            <div className="w-[60%]">
+                                <h2 className="text-xl">Email</h2>
+                                <input className="text-black border rounded-md text-xl pl-2 w-full" type="email" placeholder="Email" required value={email} onChange={(e) => setEmail(e.target.value)}/>
+                                <h2 className="text-xl">Username</h2>
+                                <input className="text-black border rounded-md text-xl pl-2 w-full" type="text" placeholder="Username" minLength={5} required value={username} onChange={(e) => setUsername(e.target.value)}/>
+                                <h2 className="text-xl">Password</h2>
+                                <input className="text-black border rounded-md text-xl pl-2 w-full" type="password" placeholder="Password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)}/>
+                            </div>
+                            <Button className="m-4" onClick={e => {clickRegister(e)}}>Register</Button>
+                            <hr className="w-[60%]"></hr>
+                        </form>
+                        <div className="w-[60%] flex justify-end">
+                            <h3 className="text-xl pb-2 mt-4">Already have an account?<Link href="/login"><Button>login</Button></Link></h3>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
+        </>
     )
 }
