@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"image-web-backend/resources/database"
@@ -19,48 +20,52 @@ type Database struct {
 	DB *database.Postgres
 }
 
-type LoginInput struct {
-	Id              int    `json:"id"`
-	EmailOrUsername string `json:"emailOrUsername"`
-	Password        string `json:"password"`
+type loginInput struct {
+	Id              int
+	EmailOrUsername string
+	Password        string
 }
 
-type User struct {
-	Id       int    `json:"id"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Password string `json:"-"`
+type user struct {
+	id       int
+	email    string
+	username string
+	password string
 }
 
-type CustomClaims struct {
-	UserID string `json:"user_username"`
+type customClaims struct {
+	id       string
+	email    string
+	username string
 	jwt.RegisteredClaims
 }
 
-func CreateToken(userID string) (string, error) {
+func CreateToken(id string, email string, username string) (string, error) {
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
-	claims := CustomClaims{
-		UserID:    userID,
+	claims := customClaims{
+		id:        id,
+		email:     email,
+		username:  username,
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		NotBefore: jwt.NewNumericDate(time.Now()),
 		Issuer:    "Image-Web",
-		Subject:   userID,
+		Subject:   "authentication",
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secretKey)
 }
 
 func (h *Database) Login(c *gin.Context) {
-	var input LoginInput
-	var user User
+	var input loginInput
+	var user user
 
 	if err := c.BindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
-	err := h.DB.Pool.QueryRow(context.Background(), "SELECT * FROM users WHERE username = $1 OR email = $1", input.EmailOrUsername).Scan(&user.Id, &user.Username, &user.Email, &user.Password)
+	err := h.DB.Pool.QueryRow(context.Background(), "SELECT * FROM users WHERE username = $1 OR email = $1", input.EmailOrUsername).Scan(&user.id, &user.username, &user.email, &user.password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -73,12 +78,12 @@ func (h *Database) Login(c *gin.Context) {
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.password), []byte(input.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Wrong Password"})
 		return
 	}
 
-	token, err := CreateToken(user.Username)
+	token, err := CreateToken(strconv.Itoa(user.id), user.email, user.username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"})
 		return

@@ -3,6 +3,7 @@ package register
 import (
 	"context"
 	"os"
+	"strconv"
 	"time"
 
 	"net/http"
@@ -19,27 +20,37 @@ type Database struct {
 	DB *database.Postgres
 }
 
-type RegisterInput struct {
-	Id       int    `json:"id"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+type registerInput struct {
+	id       int
+	email    string
+	username string
+	password string
 }
 
-type CustomClaims struct {
-	UserID string `json:"user_username"`
+type user struct {
+	id       int
+	email    string
+	username string
+}
+
+type customClaims struct {
+	id       string
+	email    string
+	username string
 	jwt.RegisteredClaims
 }
 
-func CreateToken(userID string) (string, error) {
+func CreateToken(id string, email string, username string) (string, error) {
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
-	claims := CustomClaims{
-		UserID:    userID,
+	claims := customClaims{
+		id:        id,
+		email:     email,
+		username:  username,
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		NotBefore: jwt.NewNumericDate(time.Now()),
 		Issuer:    "Image-Web",
-		Subject:   userID,
+		Subject:   "authentication",
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secretKey)
@@ -47,25 +58,32 @@ func CreateToken(userID string) (string, error) {
 
 func (h *Database) Register(c *gin.Context) {
 	err := godotenv.Load()
-	var input RegisterInput
+	var input registerInput
+	var user user
 
 	if err := c.BindJSON(&input); err != nil {
 		return
 	}
 
-	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(input.Password), 12)
+	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(input.password), 12)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
 	hashedPassword := string(hashedBytes)
 
-	_, err = h.DB.Pool.Query(context.Background(), "INSERT INTO users (email, username, password) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", input.Email, input.Username, hashedPassword)
+	_, err = h.DB.Pool.Query(context.Background(), "INSERT INTO users (email, username, password) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", input.email, input.username, hashedPassword)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 	}
 
-	token, err := CreateToken(input.Username)
+	err = h.DB.Pool.QueryRow(context.Background(), "SELECT id, email, username FROM users WHERE email = $1", input.email).Scan(&user.id, &user.email, &user.username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find user after create user"})
+		return
+	}
+
+	token, err := CreateToken(strconv.Itoa(user.id), user.email, user.username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"})
 		return
@@ -88,6 +106,5 @@ func (h *Database) Register(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Success",
-		"data":    input.Username,
 	})
 }
