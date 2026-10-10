@@ -21,11 +21,11 @@ export default function Register() {
             return alert("One of criteria is not fulfilled")
         } else {
             try {
-                await api.post("http://localhost:8080/register", {email, username, password})
-                console.log("Register successfull")
-                router.push("/login")
+                const response = await api.post("http://localhost:8080/register", {email, username, password})
+                localStorage.setItem("username", response.data.data)
+                router.push("/")
             } catch {
-                console.log("Register failed")
+                alert("User has already been created")
             }
         }
     }
