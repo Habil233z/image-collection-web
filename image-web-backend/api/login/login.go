@@ -65,7 +65,7 @@ func (h *Database) Login(c *gin.Context) {
 		return
 	}
 
-	err := h.DB.Pool.QueryRow(context.Background(), "SELECT * FROM users WHERE username = $1 OR email = $1", input.EmailOrUsername).Scan(&user.id, &user.username, &user.email, &user.password)
+	err := h.DB.Pool.QueryRow(context.Background(), "SELECT * FROM users WHERE username = $1 OR email = $1", input.EmailOrUsername).Scan(&user.id, &user.email, &user.username, &user.password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -106,6 +106,6 @@ func (h *Database) Login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login Success",
-		"data":    user,
+		"data":    user.username,
 	})
 }
