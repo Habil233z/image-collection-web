@@ -10,7 +10,6 @@ import (
 )
 
 func AuthMiddleware() gin.HandlerFunc {
-	fmt.Println("--- Incoming Request Cookies ---")
 	return func(c *gin.Context) {
 		secretKey := []byte(os.Getenv("SECRET_KEY"))
 		tokenString, err := c.Cookie("image-web-auth_token")

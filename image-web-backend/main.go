@@ -1,8 +1,8 @@
 package main
 
 import (
-	"image-web-backend/api/api/profile"
 	"image-web-backend/api/auth/login"
+	"image-web-backend/api/auth/profile"
 	"image-web-backend/api/auth/register"
 	"log"
 	"time"
@@ -28,6 +28,7 @@ func main() {
 
 	registerHandler := &register.Database{DB: db}
 	loginHandler := &login.Database{DB: db}
+	profileHandler := &profile.Database{DB: db}
 
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
@@ -48,7 +49,7 @@ func main() {
 	api := router.Group("/api")
 	api.Use(auth.AuthMiddleware())
 	{
-		api.GET("/profile", profile.Profile)
+		api.GET("/profile", profileHandler.Profile)
 	}
 
 	router.Run("localhost:8080")
