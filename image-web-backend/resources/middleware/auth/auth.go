@@ -4,33 +4,25 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
+	fmt.Println("--- Incoming Request Cookies ---")
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Access denied, No token found"})
+		secretKey := []byte(os.Getenv("SECRET_KEY"))
+		tokenString, err := c.Cookie("image-web-auth_token")
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Access denied, No cookie with token"})
 			return
 		}
-
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Auth token must be bearer token type"})
-			return
-		}
-
-		tokenString := parts[1]
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("Algorithm undefined: %v", token.Header["alg"])
 			}
-			secretKey := []byte(os.Getenv("SECRET_KEY"))
 			return secretKey, nil
 		})
 
@@ -40,10 +32,9 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			println(claims)
-			c.Set("userData", claims)
+			c.Set("auth_token", claims)
 		} else {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Gagal mengekstrak data dari token"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Fail to extract token from cookie"})
 			return
 		}
 		c.Next()

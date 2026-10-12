@@ -16,7 +16,7 @@ export default function Login() {
         e.preventDefault()
         console.log(emailOrUsername, password)
         try {
-            const response = await api.post("http://localhost:8080/login", {emailOrUsername, password}, {withCredentials: true})
+            const response = await api.post("http://localhost:8080/login", {emailOrUsername, password})
             localStorage.setItem("username", response.data.data)
             router.push("/")
         } catch (err) {

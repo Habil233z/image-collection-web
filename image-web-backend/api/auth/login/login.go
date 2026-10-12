@@ -34,24 +34,27 @@ type user struct {
 }
 
 type customClaims struct {
-	id       string
-	email    string
-	username string
+	Id       string `json:"id"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
 func CreateToken(id string, email string, username string) (string, error) {
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
 	claims := customClaims{
-		id:        id,
-		email:     email,
-		username:  username,
+		Id:       id,
+		Email:    email,
+		Username: username,
+	}
+	claims.RegisteredClaims = jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		NotBefore: jwt.NewNumericDate(time.Now()),
 		Issuer:    "Image-Web",
 		Subject:   "authentication",
 	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secretKey)
 }
@@ -89,7 +92,7 @@ func (h *Database) Login(c *gin.Context) {
 		return
 	}
 
-	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetSameSite(http.SameSiteLaxMode)
 
 	maxAge := 2 * 60 * 60
 	isSecure := os.Getenv("GIN_MODE") == "release"

@@ -14,7 +14,7 @@ export default function Header({ username }: HeaderProps) {
 
   function logout() {
     try {
-      Cookies.remove("image-web-auth_token")
+      Cookies.remove("image-web-auth_token", { path: "/", domain: "localhost" })
       localStorage.removeItem("username")
       router.push("/login")
     } catch (err) {

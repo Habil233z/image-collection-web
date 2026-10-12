@@ -1,10 +1,10 @@
 package main
 
 import (
-	"image-web-backend/api/login"
-	"image-web-backend/api/register"
+	"image-web-backend/api/api/profile"
+	"image-web-backend/api/auth/login"
+	"image-web-backend/api/auth/register"
 	"log"
-	"net/http"
 	"time"
 
 	"image-web-backend/resources/database"
@@ -48,18 +48,7 @@ func main() {
 	api := router.Group("/api")
 	api.Use(auth.AuthMiddleware())
 	{
-		api.GET("/profile", func(c *gin.Context) {
-			userData, exists := c.Get("userData")
-			if !exists {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Data user tidak ditemukan di context"})
-				return
-			}
-
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Akses berhasil!",
-				"user":    userData,
-			})
-		})
+		api.GET("/profile", profile.Profile)
 	}
 
 	router.Run("localhost:8080")
