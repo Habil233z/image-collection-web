@@ -2,6 +2,7 @@
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Cookies from "js-cookie";
+import Link from "next/dist/client/link";
 import { useRouter } from "next/navigation";
 
 
@@ -24,10 +25,12 @@ export default function Header({ username }: HeaderProps) {
 
   return (
     <div className="h-20 bg-linear-to-b from-blue-500 via-blue-600 to-blue-700 w-screen border-b border-gray-600 flex items-center justify-between">
-      <div className="flex ml-3 items-center">
-        <div className="bg-white h-15 w-15 rounded-full"></div>
-        <h1 className="text-4xl font-medium text-gray-100 ml-4">Image Web</h1>
-      </div>
+      <Link href="/">
+        <div className="flex ml-3 items-center">
+            <div className="bg-white h-15 w-15 rounded-full"></div>
+            <h1 className="text-4xl font-medium text-gray-100 ml-4">Image Web</h1>
+        </div>
+      </Link>
 
       <DropdownMenu>
         <DropdownMenuTrigger>
@@ -39,7 +42,7 @@ export default function Header({ username }: HeaderProps) {
         <DropdownMenuContent>
           <DropdownMenuGroup>
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuItem className="focus:bg-linear-to-r from-blue-300 to-blue-400">Profile</DropdownMenuItem>
+            <Link href="/profile"><DropdownMenuItem className="focus:bg-linear-to-r from-blue-300 to-blue-400">Profile</DropdownMenuItem></Link>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
