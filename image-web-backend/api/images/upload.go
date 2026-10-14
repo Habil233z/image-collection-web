@@ -1,11 +1,10 @@
-package upload
+package images
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"image-web-backend/resources/database"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,21 +14,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type Database struct {
-	DB *database.Postgres
-}
-
-type user struct {
-	id       string
-	username string
-	email    string
-}
-
 func (d *Database) UploadImage(c *gin.Context) {
 	file, err := c.FormFile("imageFile")
 	imageName := c.PostForm("imageName")
 
-	var user user
+	var user User
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No image uploaded"})
@@ -74,7 +63,7 @@ func (d *Database) UploadImage(c *gin.Context) {
 	}
 	Id := int(idFloat)
 
-	err = d.DB.Pool.QueryRow(context.Background(), "SELECT email, username FROM users WHERE id = $1", Id).Scan(&user.email, &user.username)
+	err = d.DB.Pool.QueryRow(context.Background(), "SELECT email, username FROM users WHERE id = $1", Id).Scan(&user.Email, &user.Username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{

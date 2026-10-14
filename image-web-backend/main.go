@@ -2,7 +2,7 @@ package main
 
 import (
 	"image-web-backend/api/auth"
-	"image-web-backend/api/upload"
+	"image-web-backend/api/images"
 	"log"
 	"time"
 
@@ -25,8 +25,8 @@ func main() {
 	}
 	defer db.Pool.Close()
 
-	authHandler := &auth.Database{DB: db}
-	uploadHandler := &upload.Database{DB: db}
+	authHandlers := &auth.Database{DB: db}
+	imageHandlers := &images.Database{DB: db}
 
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
@@ -41,16 +41,16 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	}))
 
-	router.POST("/register", authHandler.Register)
-	router.POST("/login", authHandler.Login)
+	router.POST("/register", authHandlers.Register)
+	router.POST("/login", authHandlers.Login)
 
-	router.GET("/images")
+	router.GET("/images", imageHandlers.Images)
 
 	api := router.Group("/api")
 	api.Use(authMiddleware.AuthMiddleware())
 	{
-		api.GET("/profile", authHandler.Profile)
-		api.POST("/upload", uploadHandler.UploadImage)
+		api.GET("/profile", authHandlers.Profile)
+		api.POST("/upload", imageHandlers.UploadImage)
 	}
 
 	router.Run("localhost:8080")

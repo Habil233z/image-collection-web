@@ -8,7 +8,18 @@ import api from "@/lib/api";
 
 export default function Home() {
   const [username, setUsername] = useState<string | null>(null);
+  const [images, setImages] = useState(null)
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  async function getImages() {
+    try {
+      const images = await api.get("http://localhost:8080/images")
+      console.log(images.data.data)
+      setImages(images.data.data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -33,6 +44,7 @@ export default function Home() {
 
   useEffect(() => {
     const storedUsername = localStorage.getItem("username");
+    getImages()
     setUsername(storedUsername);
   }, []);
 
