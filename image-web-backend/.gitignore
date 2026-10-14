@@ -19,7 +19,7 @@ go.work
 go.work.sum
 
 # Environment variables file
-.env
+.env*
 
 # IDE and Editor files (VS Code, GoLand, JetBrains)
 .vscode/
