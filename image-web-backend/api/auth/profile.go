@@ -1,29 +1,17 @@
-package profile
+package auth
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"net/http"
-	"strconv" // 1. Import strconv
-
-	"image-web-backend/resources/database"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type Database struct {
-	DB *database.Postgres
-}
-
-type user struct {
-	Email    string `json:"email"`
-	Username string `json:"username"`
-}
-
-func (h *Database) Profile(c *gin.Context) {
-	var user user
+func (d *Database) Profile(c *gin.Context) {
+	var user User
 	token, exists := c.Get("auth_token")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: User data not found"})
@@ -36,19 +24,14 @@ func (h *Database) Profile(c *gin.Context) {
 		return
 	}
 
-	idString, ok := claims["id"].(string)
+	idFloat, ok := claims["id"].(float64)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID claim type"})
 		return
 	}
+	Id := int(idFloat)
 
-	userId, err := strconv.Atoi(idString)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to convert user ID to int"})
-		return
-	}
-
-	err = h.DB.Pool.QueryRow(context.Background(), "SELECT id, email, username FROM users WHERE id = $1", userId).Scan(&user.Email, &user.Username)
+	err := d.DB.Pool.QueryRow(context.Background(), "SELECT email, username FROM users WHERE id = $1", Id).Scan(&user.Email, &user.Username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{

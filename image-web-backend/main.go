@@ -1,14 +1,13 @@
 package main
 
 import (
-	"image-web-backend/api/auth/login"
-	"image-web-backend/api/auth/profile"
-	"image-web-backend/api/auth/register"
+	"image-web-backend/api/auth"
+	"image-web-backend/api/upload"
 	"log"
 	"time"
 
 	"image-web-backend/resources/database"
-	"image-web-backend/resources/middleware/auth"
+	"image-web-backend/resources/middleware/authMiddleware"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -26,9 +25,8 @@ func main() {
 	}
 	defer db.Pool.Close()
 
-	registerHandler := &register.Database{DB: db}
-	loginHandler := &login.Database{DB: db}
-	profileHandler := &profile.Database{DB: db}
+	authHandler := &auth.Database{DB: db}
+	uploadHandler := &upload.Database{DB: db}
 
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
@@ -43,13 +41,16 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	}))
 
-	router.POST("/register", registerHandler.Register)
-	router.POST("/login", loginHandler.Login)
+	router.POST("/register", authHandler.Register)
+	router.POST("/login", authHandler.Login)
+
+	router.GET("/images")
 
 	api := router.Group("/api")
-	api.Use(auth.AuthMiddleware())
+	api.Use(authMiddleware.AuthMiddleware())
 	{
-		api.GET("/profile", profileHandler.Profile)
+		api.GET("/profile", authHandler.Profile)
+		api.POST("/upload", uploadHandler.UploadImage)
 	}
 
 	router.Run("localhost:8080")
