@@ -10,7 +10,7 @@ import (
 )
 
 func (d *Database) ImageDetail(c *gin.Context) {
-	var images Images
+	var images ImageDetail
 	paramsId := c.Param("id")
 	println("DEBUG - Received paramsId:", paramsId)
 	id, err := strconv.Atoi(paramsId)
@@ -20,7 +20,11 @@ func (d *Database) ImageDetail(c *gin.Context) {
 		return
 	}
 
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT id, image_name, user_id, created_at, image_path FROM user_images WHERE id = $1", id).Scan(&images.Id, &images.Image_name, &images.User_id, &images.Created_at, &images.Image_path)
+	err = d.DB.Pool.QueryRow(c.Request.Context(), `
+	SELECT user_images.id, user_images.image_name, user_images.user_id, user_images.created_at, user_images.image_path, users.username
+	FROM user_images
+	JOIN users ON user_images.user_id = users.id
+	WHERE user_images.id = $1`, id).Scan(&images.Id, &images.Image_name, &images.User_id, &images.Created_at, &images.Image_path, &images.Username)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{

@@ -19,6 +19,15 @@ type Images struct {
 	Image_path string    `json:"image_path"`
 }
 
+type ImageDetail struct {
+	Id         int       `json:"id"`
+	Image_name string    `json:"image_name"`
+	User_id    string    `json:"user_id"`
+	Created_at time.Time `json:"created_at"`
+	Image_path string    `json:"image_path"`
+	Username   string    `json:"username"` // Added username from users table
+}
+
 type Database struct {
 	DB *database.Postgres
 }

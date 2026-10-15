@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [username, setUsername] = useState<string | null>(null)
-  const [images, setImages] = useState(null)
+  const [images, setImages] = useState<any[] | null>(null)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
 
   const router = useRouter()
@@ -56,20 +56,18 @@ export default function Home() {
     <>
       <Header username={username} />
 
-      <div>
-        {!images ? (
-          <p>Loading images...</p>
-        ) : images.length === 0 ? (
-          <p>No images found.</p>
-        ) : (
-          <div className="columns-4 gap-4 space-y-4">
+      <div className="px-4">
+        {images ? (
+          <div className="columns-5 gap-4 space-y-4">
             {images.map((image) => (
-              <div key={image.id} className="break-inside-avoid bg-white border border-gray-100 rounded-2xl shadow-md overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300" onClick={() => router.push(`/image/${image.id}`)}>
+              <div key={image.id} className="border border-blue-100 rounded-2xl overflow-hidden flex flex-col shadow-2xl" onClick={() => router.push(`/image/${image.id}`)}>
                   <img src={`http://localhost:8080/${image.image_path}`} alt={image.image_name} className="h-full w-auto object-cover"/>
-                <span className="text-xs text-gray-400 mt-0.5">{new Date(image.created_at).toLocaleDateString()}</span>
               </div>
             ))}
           </div>
+          
+        ) : (
+          <p>No images found.</p>
         )}
       </div>
 
@@ -80,14 +78,14 @@ export default function Home() {
             <DialogTitle className="text-center text-4xl">Upload your image</DialogTitle>
               <form onSubmit={handleUploadImage} className="flex flex-col items-center justify-center">
                 {previewImage ? 
-                  <div className="relative w-40 h-40 mb-2 border rounded-md overflow-hidden">
+                  <div className="relative min-40 min-40 mb-2 border rounded-md overflow-hidden">
                     <label><img src={previewImage} alt="Image preview" className="object-cover w-full h-full" /><input type="file" name="imageFile" accept="image/*" className="hidden" onChange={handleFileChange}/></label>
                   </div> :
 
                   <div className="relative w-40 h-40 mb-2 border rounded-md overflow-hidden">
                     <label><div className="flex h-full w-full justify-center items-center text-2xl">Select image to upload</div><input type="file" name="imageFile" accept="image/*" className="hidden" onChange={handleFileChange}/></label>
                   </div>}
-                <input type="text" name="imageName" placeholder="Name for image here" className="border text-3xl my-3"/>
+                <input type="text" name="imageName" placeholder="Name for image" className="border text-3xl my-3" required/>
                 <Button type="submit">Upload image</Button>
               </form>
           </DialogHeader>

@@ -25,8 +25,6 @@ export default function ImageDetail() {
     useEffect(() => {
         const storedUsername = localStorage.getItem("username");
         setUsername(storedUsername);
-
-        // Only call API if id is defined and ready
         if (id) {
             getImageDetail(id);
         }
@@ -36,12 +34,15 @@ export default function ImageDetail() {
         <>
             <Header username={username} />
 
-            <div>
+            <div className="h-full w-full px-4 flex flex-col items-center justify-center">
                 {imageDetail ? (
-                    <div>
-                        <h1>{imageDetail.image_name}</h1>
-                        <p>User ID: {imageDetail.user_id}</p>
+                    <div className="bg-white shadow-2xl rounded-2xl p-4">
+                        <h2 className="text-6xl font-bold text-center">{imageDetail.image_name}</h2>
+                        <div>
                         <img src={`http://localhost:8080/${imageDetail.image_path}`} className="max-h-150 w-auto object-cover"></img>
+                        <h2>Created at:{new Date(imageDetail.created_at).toLocaleDateString()}</h2>
+                        <h2 className="text-2xl">Created by {imageDetail.username}</h2>
+                        </div>
                     </div>
                 ) : (
                     <p>Loading image details...</p>

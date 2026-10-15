@@ -24,7 +24,7 @@ export default function Header({ username }: HeaderProps) {
     }}
 
   return (
-    <div className="h-20 bg-linear-to-b from-blue-500 via-blue-600 to-blue-700 w-screen border-b border-gray-600 flex items-center justify-between">
+    <div className="h-20 bg-linear-to-b from-blue-500 via-blue-600 to-blue-700 w-screen border-b border-gray-600 flex items-center justify-between mb-4">
       <Link href="/">
         <div className="flex ml-3 items-center">
             <div className="bg-white h-15 w-15 rounded-full"></div>
