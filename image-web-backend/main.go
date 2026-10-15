@@ -46,6 +46,7 @@ func main() {
 	router.POST("/login", authHandlers.Login)
 
 	router.GET("/images", imageHandlers.Images)
+	router.GET("/image/:id", imageHandlers.ImageDetail)
 
 	api := router.Group("/api")
 	api.Use(authMiddleware.AuthMiddleware())

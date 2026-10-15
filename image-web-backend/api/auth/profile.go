@@ -1,13 +1,12 @@
 package auth
 
 import (
-	"context"
-	"database/sql"
 	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5"
 )
 
 func (d *Database) Profile(c *gin.Context) {
@@ -31,9 +30,9 @@ func (d *Database) Profile(c *gin.Context) {
 	}
 	Id := int(idFloat)
 
-	err := d.DB.Pool.QueryRow(context.Background(), "SELECT email, username FROM users WHERE id = $1", Id).Scan(&user.Email, &user.Username)
+	err := d.DB.Pool.QueryRow(c.Request.Context(), "SELECT email, username FROM users WHERE id = $1", Id).Scan(&user.Email, &user.Username)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error":   "Rows not found",
 				"message": "User doesn't exist",

@@ -5,11 +5,14 @@ import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import api from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [username, setUsername] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null)
   const [images, setImages] = useState(null)
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+
+  const router = useRouter()
 
   async function getImages() {
     try {
@@ -37,15 +40,16 @@ export default function Home() {
       const imageData = new FormData(e.currentTarget)
       await api.post("http://localhost:8080/api/upload", imageData)
       alert("Image upload successfull")
+      getImages()
     } catch (error) {
       console.log(error)
     }
   }
 
   useEffect(() => {
-    const storedUsername = localStorage.getItem("username");
+    const storedUsername = localStorage.getItem("username")
+    setUsername(storedUsername)
     getImages()
-    setUsername(storedUsername);
   }, []);
 
   return (
@@ -53,7 +57,20 @@ export default function Home() {
       <Header username={username} />
 
       <div>
-        
+        {!images ? (
+          <p>Loading images...</p>
+        ) : images.length === 0 ? (
+          <p>No images found.</p>
+        ) : (
+          <div className="columns-4 gap-4 space-y-4">
+            {images.map((image) => (
+              <div key={image.id} className="break-inside-avoid bg-white border border-gray-100 rounded-2xl shadow-md overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300" onClick={() => router.push(`/image/${image.id}`)}>
+                  <img src={`http://localhost:8080/${image.image_path}`} alt={image.image_name} className="h-full w-auto object-cover"/>
+                <span className="text-xs text-gray-400 mt-0.5">{new Date(image.created_at).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <Dialog>
@@ -77,5 +94,5 @@ export default function Home() {
         </DialogContent>
       </Dialog>
     </>
-  );
+  )
 }

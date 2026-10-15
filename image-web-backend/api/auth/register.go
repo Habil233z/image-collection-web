@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"os"
 
 	"net/http"
@@ -27,12 +26,12 @@ func (d *Database) Register(c *gin.Context) {
 	}
 	hashedPassword := string(hashedBytes)
 
-	_, err = d.DB.Pool.Query(context.Background(), "INSERT INTO users (email, username, password) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", input.Email, input.Username, hashedPassword)
+	_, err = d.DB.Pool.Query(c.Request.Context(), "INSERT INTO users (email, username, password) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", input.Email, input.Username, hashedPassword)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 	}
 
-	err = d.DB.Pool.QueryRow(context.Background(), "SELECT id, email, username FROM users WHERE email = $1", input.Email).Scan(&user.Id, &user.Email, &user.Username)
+	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT id, email, username FROM users WHERE email = $1", input.Email).Scan(&user.Id, &user.Email, &user.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find user after create user"})
 		return

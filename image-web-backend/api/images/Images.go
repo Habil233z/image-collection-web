@@ -7,7 +7,7 @@ import (
 )
 
 func (d *Database) Images(c *gin.Context) {
-	rows, err := d.DB.Pool.Query(c.Request.Context(), "SELECT id, image_name, user_id, created_at, image_path FROM user_images ORDER BY created_at ASC")
+	rows, err := d.DB.Pool.Query(c.Request.Context(), "SELECT id, image_name, created_at, image_path FROM user_images ORDER BY created_at ASC")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query database: " + err.Error()})
 		return
@@ -17,7 +17,7 @@ func (d *Database) Images(c *gin.Context) {
 	var images []Images
 	for rows.Next() {
 		var img Images
-		if err := rows.Scan(&img.Id, &img.Image_name, &img.User_id, &img.Created_at, &img.Image_path); err != nil {
+		if err := rows.Scan(&img.Id, &img.Image_name, &img.Created_at, &img.Image_path); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse image records" + err.Error()})
 			return
 		}

@@ -7,7 +7,7 @@ import (
 )
 
 type LoginInput struct {
-	EmailOrUsername string `json:"email_or_username"`
+	EmailOrUsername string `json:"emailOrUsername"`
 	Password        string `json:"password"`
 }
 
