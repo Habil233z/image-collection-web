@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
   const [username, setUsername] = useState<string | null>(null)
@@ -60,9 +61,11 @@ export default function Home() {
         {images ? (
           <div className="columns-5 gap-4 space-y-4">
             {images.map((image) => (
-              <div key={image.id} className="border border-blue-100 rounded-2xl overflow-hidden flex flex-col shadow-2xl" onClick={() => router.push(`/image/${image.id}`)}>
-                  <img src={`http://localhost:8080/${image.image_path}`} alt={image.image_name} className="h-full w-auto object-cover"/>
-              </div>
+              <Link href={`/image/${image.id}`}>
+                <div key={image.id} className="border border-blue-100 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+                    <img src={`http://localhost:8080/${image.image_path}`} alt={image.image_name} className="h-full w-auto object-cover"/>
+                </div>
+              </Link>
             ))}
           </div>
           

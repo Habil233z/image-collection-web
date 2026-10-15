@@ -4,8 +4,10 @@ import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader,
 import { useState, useEffect } from "react";
 import Header from "@/components/header";
 import api from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
-export default function Home() {
+export default function Profile() {
     const [username, setUsername] = useState<string | null>(null);
     const [email, setEmail] = useState<string | null>(null);
 
@@ -30,20 +32,18 @@ export default function Home() {
         <Header username={username} />
 
         <div className="w-full h-full flex justify-center">
-            <Card className="w-[50%] mt-10">
+            <Card className="min-w-[20%] mt-10 flex flex-col items-center p-4">
                 <CardHeader className="flex flex-col justify-center items-center">
                     <CardTitle className="text-5xl font-semibold">Profile:</CardTitle>
                     <div className="h-40 w-40 rounded-full bg-gray-500">
                         
                     </div>
                 </CardHeader>
-                <CardContent className="flex flex-col justify-center items-center">
+                <div className="flex flex-col justify-center items-center">
                     <p className="text-4xl font-medium">{username}</p>
                     <p className="text-3xl font-extralight">{email}</p>
-                </CardContent>
-                <CardFooter>
-                    <p>Card Footer</p>
-                </CardFooter>
+                </div>
+                <Link href="/profile/edit"><Button className="w-30">Edit Profile</Button></Link>
             </Card>
         </div>
         </>

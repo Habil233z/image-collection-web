@@ -52,6 +52,7 @@ func main() {
 	api.Use(authMiddleware.AuthMiddleware())
 	{
 		api.GET("/profile", authHandlers.Profile)
+		api.PATCH("/profile", authHandlers.EditProfile)
 		api.POST("/upload", imageHandlers.UploadImage)
 	}
 
