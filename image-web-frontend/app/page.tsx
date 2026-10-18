@@ -40,6 +40,8 @@ export default function Home() {
       await api.post("http://localhost:8080/api/upload", imageData)
       alert("Image upload successfull")
       setOpen(false)
+      setImages(null)
+      setPreviewImage(null)
       getImages()
     } catch (error) {
       console.log(error)
