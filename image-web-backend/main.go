@@ -54,6 +54,8 @@ func main() {
 		api.GET("/profile", authHandlers.Profile)
 		api.PATCH("/profile", authHandlers.EditProfile)
 		api.POST("/upload", imageHandlers.UploadImage)
+		api.PATCH("/image/:id", imageHandlers.EditImage)
+		api.DELETE("/image/:id", imageHandlers.DeleteImage)
 	}
 
 	router.Run("localhost:8080")
