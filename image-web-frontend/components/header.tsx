@@ -1,7 +1,7 @@
 "use client";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import Cookies from "js-cookie";
+import api from "@/lib/api";
 import Link from "next/dist/client/link";
 import { useRouter } from "next/navigation";
 
@@ -13,9 +13,9 @@ interface HeaderProps {
 export default function Header({ username }: HeaderProps) {
   const router = useRouter()
 
-  function logout() {
+  async function logout() {
     try {
-      Cookies.remove("image-web-auth_token", { path: "/", domain: "localhost" })
+      await api.post("http://localhost:8080/logout")
       localStorage.removeItem("username")
       router.push("/login")
     } catch (err) {
@@ -37,7 +37,7 @@ export default function Header({ username }: HeaderProps) {
           <div className="flex mr-3 items-center">
             <h1 className="text-2xl font-medium text-gray-100">{username}</h1>
             <div className="bg-white h-15 w-15 ml-4 rounded-full">
-              <img className="h-full w-full object-cover" src="test" onError={(e) => {e.currentTarget.onerror = null; e.currentTarget.src = "/user.png"}}/>
+              <img className="h-full w-full object-cover" src="/" onError={(e) => {e.currentTarget.onerror = null; e.currentTarget.src = "/user.png"}}/>
             </div>
           </div>
         </DropdownMenuTrigger>

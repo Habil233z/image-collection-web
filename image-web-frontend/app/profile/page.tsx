@@ -17,7 +17,6 @@ export default function Profile() {
             setUsername(response.data.data.username)
             localStorage.setItem("username", response.data.data.username)
             setEmail(response.data.data.email)
-            console.log(response.data.data)
         } catch (err) {
             console.log(err)
         }
@@ -35,8 +34,8 @@ export default function Profile() {
             <Card className="min-w-[20%] mt-10 flex flex-col items-center p-4">
                 <CardHeader className="flex flex-col justify-center items-center">
                     <CardTitle className="text-5xl font-semibold">Profile:</CardTitle>
-                    <div className="h-40 w-40 rounded-full bg-gray-500">
-                        
+                    <div className="h-40 w-40 rounded-full bg-white">
+                        <img className="h-full w-full object-cover" src="/" onError={(e) => {e.currentTarget.onerror = null; e.currentTarget.src = "/user.png"}}/>
                     </div>
                 </CardHeader>
                 <div className="flex flex-col justify-center items-center">

@@ -47,6 +47,7 @@ func main() {
 
 	router.POST("/register", authHandlers.Register)
 	router.POST("/login", authHandlers.Login)
+	router.POST("/logout", authHandlers.Logout)
 
 	router.GET("/images", imageHandlers.Images)
 	router.GET("/image/:id", imageHandlers.ImageDetail)
