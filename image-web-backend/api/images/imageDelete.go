@@ -19,7 +19,6 @@ func (d *Database) DeleteImage(c *gin.Context) {
 		return
 	}
 
-	// 1. Extract and validate JWT claims for authorization
 	token, exists := c.Get("auth_token")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: User data not found"})
@@ -39,7 +38,6 @@ func (d *Database) DeleteImage(c *gin.Context) {
 	}
 	userID := int(idFloat)
 
-	// 2. Fetch image owner and file path to verify ownership and clean up storage
 	var ownerID int
 	var imagePath string
 	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id, image_path FROM user_images WHERE id = $1", imageID).Scan(&ownerID, &imagePath)
@@ -52,20 +50,17 @@ func (d *Database) DeleteImage(c *gin.Context) {
 		return
 	}
 
-	// 3. Ensure the logged-in user owns this image
 	if ownerID != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: You do not own this image"})
 		return
 	}
 
-	// 4. Delete the record from PostgreSQL
 	_, err = d.DB.Pool.Exec(c.Request.Context(), "DELETE FROM user_images WHERE id = $1", imageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete image record from database"})
 		return
 	}
 
-	// 5. Delete the file from local storage (optional, but recommended to prevent disk bloat)
 	if imagePath != "" {
 		_ = os.Remove(imagePath)
 	}

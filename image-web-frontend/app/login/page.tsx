@@ -14,7 +14,6 @@ export default function Login() {
 
     async function clickLogin(e: any) {
         e.preventDefault()
-        console.log(emailOrUsername, password)
         try {
             const response = await api.post("http://localhost:8080/login", {emailOrUsername, password})
             localStorage.setItem("username", response.data.data)

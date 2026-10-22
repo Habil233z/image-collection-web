@@ -36,7 +36,9 @@ export default function Header({ username }: HeaderProps) {
         <DropdownMenuTrigger>
           <div className="flex mr-3 items-center">
             <h1 className="text-2xl font-medium text-gray-100">{username}</h1>
-            <div className="bg-white h-15 w-15 ml-4 rounded-full"></div>
+            <div className="bg-white h-15 w-15 ml-4 rounded-full">
+              <img className="h-full w-full object-cover" src="test" onError={(e) => {e.currentTarget.onerror = null; e.currentTarget.src = "/user.png"}}/>
+            </div>
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent>

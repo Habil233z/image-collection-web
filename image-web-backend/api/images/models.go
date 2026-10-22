@@ -25,7 +25,7 @@ type ImageDetail struct {
 	User_id    string    `json:"user_id"`
 	Created_at time.Time `json:"created_at"`
 	Image_path string    `json:"image_path"`
-	Username   string    `json:"username"` // Added username from users table
+	Username   string    `json:"username"`
 }
 
 type Database struct {

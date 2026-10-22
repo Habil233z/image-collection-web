@@ -16,13 +16,12 @@ import (
 
 func (d *Database) EditImage(c *gin.Context) {
 	paramsId := c.Param("id")
-	imageID, err := strconv.Atoi(paramsId)
+	imageId, err := strconv.Atoi(paramsId)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
 
-	// 1. Extract and validate JWT claims
 	token, exists := c.Get("auth_token")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: User data not found"})
@@ -40,12 +39,13 @@ func (d *Database) EditImage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID claim type"})
 		return
 	}
-	userID := int(idFloat)
+	userId := int(idFloat)
 	username := claims["username"].(string)
 
 	var currentImagePath string
 	var creatorId int
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id, image_path FROM user_images WHERE id = $1", imageID).Scan(&creatorId, &currentImagePath)
+
+	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id, image_path FROM user_images WHERE id = $1", imageId).Scan(&creatorId, &currentImagePath)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
@@ -55,7 +55,7 @@ func (d *Database) EditImage(c *gin.Context) {
 		return
 	}
 
-	if creatorId != userID {
+	if creatorId != userId {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: You do not have permission to edit this image"})
 		return
 	}
@@ -83,9 +83,9 @@ func (d *Database) EditImage(c *gin.Context) {
 		_ = os.Remove(currentImagePath)
 	}
 
-	_, err = d.DB.Pool.Exec(c.Request.Context(), `UPDATE user_images SET image_name = $1, image_path = $2 WHERE id = $3`, imageName, newImagePath, imageID)
+	_, err = d.DB.Pool.Exec(c.Request.Context(), `UPDATE user_images SET image_name = $1, image_path = $2 WHERE id = $3`, imageName, newImagePath, imageId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update image record"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update image"})
 		return
 	}
 

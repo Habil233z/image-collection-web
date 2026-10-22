@@ -15,9 +15,8 @@ export default function Home() {
 
   async function getImages() {
     try {
-      const images = await api.get("http://localhost:8080/images")
-      console.log(images.data.data)
-      setImages(images.data.data)
+      const response = await api.get("http://localhost:8080/images")
+      setImages(response.data.data)
     } catch (error) {
       console.log(error)
     }
@@ -60,7 +59,7 @@ export default function Home() {
 
       <div className="px-4">
         {images ? (
-          <div className="columns-5">
+          <div className="columns-4">
             {images.map((image) => (
               <Link key={image.id} href={`/image/${image.id}`}>
                 <div className="border border-blue-100 rounded-2xl overflow-hidden flex flex-col shadow-2xl mb-4">

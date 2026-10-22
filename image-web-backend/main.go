@@ -2,7 +2,9 @@ package main
 
 import (
 	"image-web-backend/api/auth"
+	"image-web-backend/api/comments"
 	"image-web-backend/api/images"
+
 	"log"
 	"time"
 
@@ -27,6 +29,7 @@ func main() {
 
 	authHandlers := &auth.Database{DB: db}
 	imageHandlers := &images.Database{DB: db}
+	commentHandlers := &comments.Database{DB: db}
 
 	router := gin.Default()
 	router.Static("/uploads", "./uploads")
@@ -48,6 +51,8 @@ func main() {
 	router.GET("/images", imageHandlers.Images)
 	router.GET("/image/:id", imageHandlers.ImageDetail)
 
+	router.GET("/comments/:id", commentHandlers.Comments)
+
 	api := router.Group("/api")
 	api.Use(authMiddleware.AuthMiddleware())
 	{
@@ -56,6 +61,8 @@ func main() {
 		api.POST("/upload", imageHandlers.UploadImage)
 		api.PATCH("/image/:id", imageHandlers.EditImage)
 		api.DELETE("/image/:id", imageHandlers.DeleteImage)
+
+		api.POST("/comments/:id", commentHandlers.CommentImage)
 	}
 
 	router.Run("localhost:8080")
