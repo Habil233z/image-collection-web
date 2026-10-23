@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (d *Database) Comments(c *gin.Context) {
+func (d *Database) GetComments(c *gin.Context) {
 	paramsId := c.Param("id")
 	id, err := strconv.Atoi(paramsId)
 

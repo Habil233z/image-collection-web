@@ -52,7 +52,7 @@ func main() {
 	router.GET("/images", imageHandlers.Images)
 	router.GET("/image/:id", imageHandlers.ImageDetail)
 
-	router.GET("/comments/:id", commentHandlers.Comments)
+	router.GET("/image/:id/comments", commentHandlers.GetComments)
 
 	api := router.Group("/api")
 	api.Use(authMiddleware.AuthMiddleware())
@@ -63,7 +63,9 @@ func main() {
 		api.PATCH("/image/:id", imageHandlers.EditImage)
 		api.DELETE("/image/:id", imageHandlers.DeleteImage)
 
-		api.POST("/comments/:id", commentHandlers.CommentImage)
+		api.POST("/image/:id/comments", commentHandlers.PostComment)
+		api.PATCH("/image/:id/comment/:commentId", commentHandlers.EditComment)
+		api.DELETE("/image/:id/comment/:commentId", commentHandlers.DeleteComment)
 	}
 
 	router.Run("localhost:8080")

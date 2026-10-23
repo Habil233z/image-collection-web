@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (d *Database) CommentImage(c *gin.Context) {
+func (d *Database) PostComment(c *gin.Context) {
 	var comment Comments
 
 	paramsId := c.Param("id")

@@ -49,7 +49,6 @@ func (d *Database) DeleteImage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
-
 	if ownerID != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: You do not own this image"})
 		return
