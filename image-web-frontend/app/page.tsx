@@ -37,7 +37,7 @@ export default function Home() {
     try {
       const imageData = new FormData(e.currentTarget)
       await api.post("http://localhost:8080/api/upload", imageData)
-      alert("Image upload successfull")
+      alert("Image upload successful")
       setOpen(false)
       setImages(null)
       setPreviewImage(null)
@@ -54,46 +54,74 @@ export default function Home() {
   }, []);
 
   return (
-    <>
+    <div className="min-h-screen w-screen bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col">
       <Header username={username} />
 
-      <div className="px-4">
-        {images ? (
-          <div className="columns-4">
+      <main className="px-6 py-2 mx-auto w-full">
+        {images && images.length > 0 ? (
+          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 h-full">
             {images.map((image) => (
-              <Link key={image.id} href={`/image/${image.id}`}>
-                <div className="border border-blue-100 rounded-2xl overflow-hidden flex flex-col shadow-2xl mb-4">
-                    <img src={`http://localhost:8080/${image.image_path}`} alt={image.image_name} className="h-full w-auto object-cover"/>
-                </div>
+              <Link key={image.id} href={`/image/${image.id}`} className="overflow-hidden shadow-lg mx-1">
+                  <div className="overflow-hidden bg-gray-100 hover:scale-105 duration-300">
+                    <img 
+                      src={`http://localhost:8080/${image.image_path}`} 
+                      alt={image.image_name} 
+                      className="w-full h-auto object-cover"
+                    />
+                  </div>
               </Link>
             ))}
           </div>
-          
         ) : (
-          <p className="text-4xl font-semibold text-center">No images found.</p>
+          <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+            <div className="bg-white/60 backdrop-blur-md border border-white/60 p-8 rounded-3xl shadow-xl max-w-md">
+              <p className="text-2xl font-bold text-gray-800 mb-2">No images found</p>
+              <p className="text-sm text-gray-500">Upload your first image share it with others!</p>
+            </div>
+          </div>
         )}
-      </div>
+      </main>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger className="fixed bottom-10 right-10 bg-linear-to-r from-blue-300 to-blue-400 p-2 rounded-lg border-2 border-gray-800">Upload Image</DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-center text-4xl">Upload your image</DialogTitle>
-              <form onSubmit={handleUploadImage} className="flex flex-col items-center justify-center">
-                {previewImage ? 
-                  <div className="relative min-40 min-40 mb-2 border rounded-md overflow-hidden">
-                    <label><img src={previewImage} alt="Image preview" className="object-cover w-full h-full" /><input type="file" name="imageFile" accept="image/*" className="hidden" onChange={handleImageChange}/></label>
-                  </div> :
+        <DialogTrigger className="fixed bottom-8 right-8 bg-black hover:bg-gray-800 text-white px-6 py-4 rounded-full shadow-2xl font-medium flex items-center gap-2 z-50">
+          <span>+ Upload Image</span>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md rounded-3xl bg-white/95 backdrop-blur-md border border-white/60 p-6">
+          <DialogHeader className="space-y-4">
+            <DialogTitle className="text-center text-2xl font-bold text-gray-900">Upload your image</DialogTitle>
+            <form onSubmit={handleUploadImage} className="flex flex-col items-center justify-center gap-4">
+              {previewImage ? (
+                <div className="relative w-48 h-48 mb-2 border border-gray-200 rounded-2xl overflow-hidden shadow-inner group cursor-pointer">
+                  <label className="cursor-pointer w-full h-full block">
+                    <img src={previewImage} alt="Image preview" className="object-cover w-full h-full" />
+                    <input type="file" name="imageFile" accept="image/*" className="hidden" onChange={handleImageChange} />
+                  </label>
+                </div>
+              ) : (
+                <div className="relative w-full h-40 mb-2 border-2 border-dashed border-sky-300 rounded-2xl bg-sky-50/50 hover:bg-sky-50 flex items-center justify-center transition cursor-pointer">
+                  <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
+                    <span className="text-sm font-semibold text-sky-600">Select image</span>
+                    <span className="text-xs text-gray-400 mt-1">SVG, PNG, JPG or GIF</span>
+                    <input type="file" name="imageFile" accept="image/*" className="hidden" onChange={handleImageChange} required />
+                  </label>
+                </div>
+              )}
+              
+              <input 
+                type="text" 
+                name="imageName" 
+                placeholder="Image title" 
+                className="w-full text-black border border-gray-200 rounded-xl text-base px-4 py-3 bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 transition" 
+                required 
+              />
 
-                  <div className="relative w-40 h-40 mb-2 border rounded-md overflow-hidden">
-                    <label><div className="flex h-full w-full justify-center items-center text-2xl">Select image to upload</div><input type="file" name="imageFile" accept="image/*" className="hidden" onChange={handleImageChange}/></label>
-                  </div>}
-                <input type="text" name="imageName" placeholder="Name for image" className="border text-3xl my-3 rounded-2xl px-2" required/>
-                <Button type="submit">Upload image</Button>
-              </form>
+              <Button type="submit" className="w-full bg-neutral-900 hover:bg-black text-white font-medium py-3 rounded-full transition shadow-lg text-base mt-2">
+                Upload image
+              </Button>
+            </form>
           </DialogHeader>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   )
 }

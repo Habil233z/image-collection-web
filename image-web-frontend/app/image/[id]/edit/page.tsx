@@ -4,6 +4,8 @@ import Header from "@/components/header"
 import api from "@/lib/api"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function EditImage() {
     const router = useRouter()
@@ -65,35 +67,61 @@ export default function EditImage() {
     }, []);
 
     return (
-        <>
+        <div className="min-h-screen w-screen bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col pb-12">
             <Header username={username} />
 
-            <div className="h-full w-full px-4 py-8 flex flex-col items-center justify-center">
+            <main className="flex-1 w-full max-w-xl mx-auto px-4 flex flex-col items-center justify-center">
+                <Card className="w-full shadow-2xl rounded-3xl border border-white/60 bg-white/90 backdrop-blur-md p-6 sm:p-8">
+                    <CardHeader className="space-y-2 pb-6 text-center">
+                        <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Edit Image</CardTitle>
+                    </CardHeader>
 
-                <div className="bg-white shadow-2xl rounded-2xl p-6 w-full max-w-xl">
-                    <h1 className="text-3xl font-bold text-center mb-6">Edit Image</h1>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold uppercase tracking-wider text-gray-600">Image Name</label>
+                                <input 
+                                    type="text" 
+                                    value={imageName} 
+                                    onChange={(e) => setImageName(e.target.value)} 
+                                    className="w-full text-black border border-gray-200 rounded-xl text-base px-4 py-3 bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 transition" 
+                                    required
+                                />
+                            </div>
 
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-1">
-                            <h2 className="text-2xl font-semibold text-gray-700">Image Name</h2>
-                            <input type="text" value={imageName} onChange={(e) => setImageName(e.target.value)} className="border border-gray-300 rounded-lg px-2 text-3xl focus:ring-blue-500" required/>
-                        </div>
+                            <div className="flex flex-col w-full justify-center items-center space-y-2">
+                                <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 self-start">Image (Click to change)</label>
+                                <label className="cursor-pointer w-full flex flex-col items-center justify-center border-2 border-dashed border-sky-300 rounded-2xl bg-sky-50/50 hover:bg-sky-50 p-4 transition group">
+                                    <img 
+                                        src={previewUrl || `http://localhost:8080/${currentImagePath}`} 
+                                        className="max-h-72 w-auto object-contain rounded-xl shadow-xs group-hover:scale-[1.02] transition" 
+                                        alt="Preview"
+                                    />
+                                    <span className="text-xs text-sky-600 font-semibold mt-3">Click image to replace</span>
+                                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden"/>
+                                </label>
+                            </div>
 
-                        <div className="flex  flex-col w-full justify-center items-center">
-                            <h2 className="text-2xl font-semibold text-gray-700">Image</h2>
-                            <label className="cursor-pointer">
-                                <img src={previewUrl || `http://localhost:8080/${currentImagePath}`} className="max-h-80 w-auto object-contain"/>
-                                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden"/>
-                            </label>
-                        </div>
-
-                        <div className="flex gap-4 mt-4">
-                            <button type="submit" className="flex-1 bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700">Save</button>
-                            <button type="button" onClick={() => router.push(`/image/${id}`)} className="flex-1 bg-gray-200 text-gray-700 font-semibold py-2 rounded-lg hover:bg-gray-300">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </>
+                            <div className="flex gap-4 mt-2">
+                                <Button 
+                                    type="button" 
+                                    onClick={() => router.push(`/image/${id}`)} 
+                                    variant="outline"
+                                    className="flex-1 py-3 rounded-full border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button 
+                                    type="submit" 
+                                    className="flex-1 bg-neutral-900 hover:bg-black text-white font-medium py-3 rounded-full transition shadow-lg text-base"
+                                >
+                                    Save Changes
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            </main>
+        </div>
     )
 }
