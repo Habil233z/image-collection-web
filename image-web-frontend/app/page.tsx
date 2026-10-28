@@ -11,12 +11,19 @@ export default function Home() {
   const [username, setUsername] = useState<string | null>(null)
   const [images, setImages] = useState<any[] | null>(null)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(false)
+  const [page, setPage] = useState<number>(1)
+  const [hasMore, setHasMore] = useState<boolean>(true)
 
-  async function getImages() {
+  async function getImages(pageNum: number) {
     try {
-      const response = await api.get("http://localhost:8080/images")
+      const response = await api.get(`http://localhost:8080/images?page=${pageNum}`)
       setImages(response.data.data)
+      if (response.data.data.length < 20) {
+        setHasMore(false)
+      } else {
+        setHasMore(true)
+      }
     } catch (error) {
       console.log(error)
     }
@@ -41,7 +48,7 @@ export default function Home() {
       setOpen(false)
       setImages(null)
       setPreviewImage(null)
-      getImages()
+      getImages(page)
     } catch (error) {
       console.log(error)
     }
@@ -50,8 +57,8 @@ export default function Home() {
   useEffect(() => {
     const storedUsername = localStorage.getItem("username")
     setUsername(storedUsername)
-    getImages()
-  }, []);
+    getImages(page)
+  }, [page]);
 
   return (
     <div className="min-h-screen w-screen bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col">
@@ -59,7 +66,7 @@ export default function Home() {
 
       <main className="px-6 py-2 mx-auto w-full">
         {images && images.length > 0 ? (
-          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 h-full">
+          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 h-full pb-10">
             {images.map((image) => (
               <Link key={image.id} href={`/image/${image.id}`} className="overflow-hidden shadow-lg mx-1">
                   <div className="overflow-hidden bg-gray-100 hover:scale-105 duration-300">
@@ -81,6 +88,28 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {images && images.length > 0 && (
+          <div className="flex justify-center items-center gap-4 mt-2 pb-4">
+              <Button 
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))} 
+                disabled={page === 1}
+                className="bg-white/80 hover:bg-white text-gray-800 border border-white/60 rounded-full px-6 py-2 shadow-md disabled:opacity-50"
+              >
+                Previous Page
+              </Button>
+              <span className="text-gray-800 font-semibold px-4 py-2 bg-white/50 backdrop-blur-md rounded-full shadow-xs">
+                Page {page}
+              </span>
+              <Button 
+                onClick={() => setPage((prev) => prev + 1)} 
+                disabled={!hasMore}
+                className="bg-neutral-900 hover:bg-black text-white rounded-full px-6 py-2 shadow-md disabled:opacity-50"
+              >
+                Next Page
+              </Button>
+            </div>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger className="fixed bottom-8 right-8 bg-black hover:bg-gray-800 text-white px-6 py-4 rounded-full shadow-2xl font-medium flex items-center gap-2 z-50">
