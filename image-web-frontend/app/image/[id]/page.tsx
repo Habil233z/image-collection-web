@@ -37,6 +37,9 @@ export default function ImageDetail() {
     const [editCommentText, setEditCommentText] = useState<string>("")
     const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false)
 
+    const [page, setPage] = useState<number>(1)
+    const [hasMore, setHasMore] = useState<boolean>(true)
+
     async function getImageDetail(targetId: any) {
         try {
             const response = await api.get(`http://localhost:8080/image/${targetId}`);
@@ -68,16 +71,21 @@ export default function ImageDetail() {
             }
             await api.post(`http://localhost:8080/api/image/${id}/comments`, { comment })
             setComment("")
-            getComments(id)
+            getComments(id, page)
         } catch (error) {
             console.log(error)
         }
     }
 
-    async function getComments(imageId: any) {
+    async function getComments(imageId: any, pageNum: number) {
         try {
-            const response = await api.get(`http://localhost:8080/image/${imageId}/comments`)
+            const response = await api.get(`http://localhost:8080/image/${imageId}/comments?page=${pageNum}`)
             setComments(response.data.data)
+              if (response.data.data.length < 8) {
+            setHasMore(false)
+            } else {
+            setHasMore(true)
+            }
         } catch (error) {
             console.log(error)
         }
@@ -93,7 +101,7 @@ export default function ImageDetail() {
             await api.patch(`http://localhost:8080/api/image/${imageId}/comment/${commentId}`, { editCommentText })
             alert("Comment has been edited")
             setIsDialogOpen(false)
-            getComments(id)
+            getComments(id, page)
         } catch (error) {
             console.log(error)
         }
@@ -105,7 +113,7 @@ export default function ImageDetail() {
         }
         try {
             await api.delete(`http://localhost:8080/api/image/${imageId}/comment/${commentId}`)
-            getComments(id)
+            getComments(id, page)
         } catch (error) {
             console.log(error)
         }
@@ -116,9 +124,9 @@ export default function ImageDetail() {
         setUsername(storedUsername)
         if (id) {
             getImageDetail(id)
-            getComments(id)
+            getComments(id, page)
         }
-    }, []);
+    }, [page]);
 
     return (
         <div className="min-h-screen w-full bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col pb-16">
@@ -174,6 +182,7 @@ export default function ImageDetail() {
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 text-center">Comments</h2>
 
                     {comments && comments.length > 0 ? (
+                        <>
                         <div className="flex flex-wrap gap-4 w-full mb-6">
                             {comments.map((commentItem) => (
                                 <div key={commentItem.id} className="bg-white/80 backdrop-blur-xs rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm transition hover:shadow-md flex flex-col justify-between">
@@ -229,6 +238,28 @@ export default function ImageDetail() {
                                 </div>
                             ))}
                         </div>
+                            {comments && comments.length > 0 && (
+                                <div className="flex justify-center items-center gap-4 mt-2 pb-4">
+                                <Button 
+                                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))} 
+                                    disabled={page === 1}
+                                    className="bg-white/80 hover:bg-white text-gray-800 border border-white/60 rounded-full px-6 py-2 shadow-md disabled:opacity-50"
+                                >
+                                    Previous Page
+                                </Button>
+                                <span className="text-gray-800 font-semibold px-4 py-2 bg-white/50 backdrop-blur-md rounded-full shadow-xs">
+                                    Page {page}
+                                </span>
+                                <Button 
+                                    onClick={() => setPage((prev) => prev + 1)} 
+                                    disabled={!hasMore}
+                                    className="bg-neutral-900 hover:bg-black text-white rounded-full px-6 py-2 shadow-md disabled:opacity-50"
+                                >
+                                    Next Page
+                                </Button>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <p className="text-lg font-medium text-gray-400 text-center py-6">No Comments yet. Be the first to comment!</p>
                     )}

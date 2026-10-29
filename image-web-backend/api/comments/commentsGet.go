@@ -8,6 +8,15 @@ import (
 )
 
 func (d *Database) GetComments(c *gin.Context) {
+	pageParams := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageParams)
+	if page < 1 {
+		page = 1
+	}
+
+	limit := 8
+	offset := (page - 1) * limit
+
 	paramsId := c.Param("id")
 	id, err := strconv.Atoi(paramsId)
 
@@ -24,7 +33,8 @@ func (d *Database) GetComments(c *gin.Context) {
 	JOIN users ON image_comments.user_id = users.id
 	WHERE image_comments.image_id = $1
 	ORDER BY created_at ASC
-	`, id)
+	LIMIT $2 OFFSET $3
+	`, id, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query database: " + err.Error()})
 		return
