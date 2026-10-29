@@ -11,6 +11,7 @@ export default function Home() {
   const [username, setUsername] = useState<string | null>(null)
   const [images, setImages] = useState<any[] | null>(null)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [open, setOpen] = useState<boolean>(false)
   const [page, setPage] = useState<number>(1)
   const [hasMore, setHasMore] = useState<boolean>(true)
@@ -32,6 +33,7 @@ export default function Home() {
   function handleImageChange(e: any) {
     const file = e.target.files?.[0]
     if (file) {
+      setSelectedFile(file)
       const image = URL.createObjectURL(file)
       setPreviewImage(image)
     } else {
@@ -41,13 +43,23 @@ export default function Home() {
 
   async function handleUploadImage(e: any) {
     e.preventDefault()
+    if (!selectedFile) {
+      alert("Please select an image file")
+      return
+    }
     try {
-      const imageData = new FormData(e.currentTarget)
+      const formElement = e.currentTarget
+      const imageNameInput = formElement.elements.namedItem("imageName")
+      const imageData = new FormData()
+      imageData.append("imageFile", selectedFile)
+      imageData.append("imageName", imageNameInput.value)
+
       await api.post("http://localhost:8080/api/upload", imageData)
       alert("Image upload successful")
       setOpen(false)
       setImages(null)
       setPreviewImage(null)
+      setSelectedFile(null)
       getImages(page)
     } catch (error) {
       console.log(error)
@@ -66,9 +78,9 @@ export default function Home() {
 
       <main className="px-6 py-2 mx-auto w-full">
         {images && images.length > 0 ? (
-          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 h-full pb-10">
+          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 h-full pb-10 break-inside-avoid mb-4">
             {images.map((image) => (
-              <Link key={image.id} href={`/image/${image.id}`} className="overflow-hidden shadow-lg mx-1">
+              <Link key={image.id} href={`/image/${image.id}`}>
                   <div className="overflow-hidden bg-gray-100 hover:scale-105 duration-300">
                     <img 
                       src={`http://localhost:8080/${image.image_path}`} 
