@@ -141,12 +141,13 @@ export default function ImageDetail() {
         }
         try {
             await api.delete(`http://localhost:8080/api/image/${id}/comment/${commentId}`)
+            setComments([])
             getComments(page)
         } catch (error) {
             console.log(error)
         }
     }
-
+    
     useEffect(() => {
         const storedUsername = localStorage.getItem("username")
         setUsername(storedUsername)
