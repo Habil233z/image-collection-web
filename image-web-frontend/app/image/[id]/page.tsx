@@ -30,8 +30,10 @@ export default function ImageDetail() {
 
     const [username, setUsername] = useState<string | null>(null)
     const [imageDetail, setImageDetail] = useState<any>(null)
+    const [likesCount, setLikesCount] = useState<number>(0)
+    const [liked, setLiked] = useState<boolean>(false)
     const [comment, setComment] = useState<string>("")
-    const [comments, setComments] = useState<any[] | null>(null)
+    const [comments, setComments] = useState<any[]>([])
 
     const [commentId, setCommentId] = useState<any | null>(null)
     const [editCommentText, setEditCommentText] = useState<string>("")
@@ -40,9 +42,9 @@ export default function ImageDetail() {
     const [page, setPage] = useState<number>(1)
     const [hasMore, setHasMore] = useState<boolean>(true)
 
-    async function getImageDetail(targetId: any) {
+    async function getImageDetail() {
         try {
-            const response = await api.get(`http://localhost:8080/image/${targetId}`);
+            const response = await api.get(`http://localhost:8080/image/${id}`);
             setImageDetail(response.data.data);
         } catch (error) {
             console.log("Error fetching image detail:", error)
@@ -62,6 +64,29 @@ export default function ImageDetail() {
         }
     }
 
+    async function getLikes() {
+        try {
+            const response = await api.get(`http://localhost:8080/image/${id}/likes`)
+            console.log(response.data)
+            if (response.data.isLiked) {
+                setLiked(true)
+            }
+            setLikesCount(response.data.likeCount)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    async function handleLike() {
+        try {
+            setLiked(!liked)
+            await api.post(`http://localhost:8080/api/image/${id}/like`)
+            getLikes()
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     async function createComment() {
         try {
             if (comment.length === 0) {
@@ -71,15 +96,18 @@ export default function ImageDetail() {
             }
             await api.post(`http://localhost:8080/api/image/${id}/comments`, { comment })
             setComment("")
-            getComments(id, page)
+            getComments(page)
         } catch (error) {
             console.log(error)
         }
     }
 
-    async function getComments(imageId: any, pageNum: number) {
+    async function getComments(pageNum: number) {
         try {
-            const response = await api.get(`http://localhost:8080/image/${imageId}/comments?page=${pageNum}`)
+            const response = await api.get(`http://localhost:8080/image/${id}/comments?page=${pageNum}`)
+            if (response.data.data === null) {
+                return
+            }
             setComments(response.data.data)
               if (response.data.data.length < 8) {
             setHasMore(false)
@@ -91,29 +119,29 @@ export default function ImageDetail() {
         }
     }
 
-    async function editComment(imageId: any) {
+    async function editComment() {
         try {
             if (!editCommentText.trim()) {
                 const inputEl = document.getElementById("editCommentInput") as HTMLInputElement
                 inputEl?.reportValidity()
                 return
             }
-            await api.patch(`http://localhost:8080/api/image/${imageId}/comment/${commentId}`, { editCommentText })
+            await api.patch(`http://localhost:8080/api/image/${id}/comment/${commentId}`, { editCommentText })
             alert("Comment has been edited")
             setIsDialogOpen(false)
-            getComments(id, page)
+            getComments(page)
         } catch (error) {
             console.log(error)
         }
     }
 
-    async function deleteComment(commentId: any, imageId: any) {
+    async function deleteComment(commentId: any) {
         if (!window.confirm("Are you sure you want to delete this comment?")) {
             return
         }
         try {
-            await api.delete(`http://localhost:8080/api/image/${imageId}/comment/${commentId}`)
-            getComments(id, page)
+            await api.delete(`http://localhost:8080/api/image/${id}/comment/${commentId}`)
+            getComments(page)
         } catch (error) {
             console.log(error)
         }
@@ -123,8 +151,9 @@ export default function ImageDetail() {
         const storedUsername = localStorage.getItem("username")
         setUsername(storedUsername)
         if (id) {
-            getImageDetail(id)
-            getComments(id, page)
+            getImageDetail()
+            getComments(page)
+            getLikes()
         }
     }, [page]);
 
@@ -132,6 +161,7 @@ export default function ImageDetail() {
         <div className="min-h-screen w-full bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col pb-16">
             <Header username={username} />
 
+{/* Image card area */}
             <main className="flex-1 w-full px-6 sm:px-12 flex flex-col items-center">
                 {imageDetail && (
                     <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-6 sm:p-8 w-full max-w-6xl border border-white/60 flex flex-col items-center mb-8">
@@ -139,7 +169,7 @@ export default function ImageDetail() {
                         <div className="w-full flex flex-col items-center">
                             <img 
                                 src={`http://localhost:8080/${imageDetail.image_path}`} 
-                                className="max-h-[600px] w-auto rounded-2xl object-contain shadow-md mb-6" 
+                                className="max-h-150 w-auto rounded-2xl object-contain shadow-md mb-6" 
                                 alt={imageDetail.image_name}
                             />  
                                 {username === imageDetail.username ? (
@@ -178,9 +208,21 @@ export default function ImageDetail() {
                     </div>
                 )}
 
+{/* Comment card area */}
                 <div className="w-full max-w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 p-6 sm:p-8 flex flex-col">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 text-center">Comments</h2>
 
+                    <div className="flex w-full justify-center">
+                        <h2>{likesCount}</h2>
+                        <div onClick={() => handleLike()}>
+                        {liked ? (
+                            <svg width="36" height="36" viewBox="0 0 48 48" ><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                        ):(
+                            <svg width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                        )}
+                        </div>
+                    </div>
+
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 text-center">Comments</h2>
                     {comments && comments.length > 0 ? (
                         <>
                         <div className="flex flex-wrap gap-4 w-full mb-6">
@@ -196,7 +238,6 @@ export default function ImageDetail() {
                                                 <p className="text-gray-600 break-all mt-1 text-sm sm:text-base">{commentItem.comment}</p>
                                             </div>
                                         </div>
-
                                         <div className="flex flex-col items-end gap-1">
                                             {username === commentItem.username && (
                                                 <DropdownMenu>
@@ -221,7 +262,7 @@ export default function ImageDetail() {
                                                         <DropdownMenuSeparator className="my-1 border-gray-100" />
                                                         <DropdownMenuGroup>
                                                             <DropdownMenuItem 
-                                                                onClick={() => deleteComment(commentItem.id, imageDetail.id)} 
+                                                                onClick={() => deleteComment(commentItem.id)} 
                                                                 className="cursor-pointer text-red-600 font-medium rounded-xl px-3 py-1.5 focus:bg-red-50 focus:text-red-700 transition"
                                                             >
                                                                 Delete
@@ -298,7 +339,7 @@ export default function ImageDetail() {
                             />
                             <div className="flex justify-end gap-2 mt-2">
                                 <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-full px-5 py-2.5 border-gray-300">Cancel</Button>
-                                <Button onClick={() => editComment(imageDetail.id)} className="bg-neutral-900 hover:bg-black text-white rounded-full px-6 py-2.5 shadow-lg">Save Comment</Button>
+                                <Button onClick={() => editComment()} className="bg-neutral-900 hover:bg-black text-white rounded-full px-6 py-2.5 shadow-lg">Save Comment</Button>
                             </div>
                         </div>
                     </DialogHeader>

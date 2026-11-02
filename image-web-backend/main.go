@@ -4,6 +4,7 @@ import (
 	"image-web-backend/api/auth"
 	"image-web-backend/api/comments"
 	"image-web-backend/api/images"
+	"image-web-backend/api/likes"
 
 	"log"
 	"time"
@@ -30,6 +31,7 @@ func main() {
 	authHandlers := &auth.Database{DB: db}
 	imageHandlers := &images.Database{DB: db}
 	commentHandlers := &comments.Database{DB: db}
+	likeHandlers := &likes.Database{DB: db}
 
 	router := gin.Default()
 	router.Static("/uploads", "./uploads")
@@ -51,6 +53,7 @@ func main() {
 
 	router.GET("/images", imageHandlers.Images)
 	router.GET("/image/:id", imageHandlers.ImageDetail)
+	router.GET("/image/:id/likes", likeHandlers.GetLikeImage)
 
 	router.GET("/image/:id/comments", commentHandlers.GetComments)
 
@@ -62,6 +65,8 @@ func main() {
 		api.POST("/upload", imageHandlers.UploadImage)
 		api.PATCH("/image/:id", imageHandlers.EditImage)
 		api.DELETE("/image/:id", imageHandlers.DeleteImage)
+
+		api.POST("/image/:id/like", likeHandlers.ToggleLike)
 
 		api.POST("/image/:id/comments", commentHandlers.PostComment)
 		api.PATCH("/image/:id/comment/:commentId", commentHandlers.EditComment)
