@@ -2,6 +2,7 @@ package likes
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -11,14 +12,30 @@ import (
 func (d *Database) GetLikeImage(c *gin.Context) {
 	paramsId := c.Param("id")
 	imageId, err := strconv.Atoi(paramsId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image ID format"})
+		return
+	}
 
 	var userId int
 	var isLiked bool
 
-	if token, userExists := c.Get("auth_token"); userExists {
-		if claims, ok := token.(jwt.MapClaims); ok {
-			if idFloat, ok := claims["id"].(float64); ok {
-				userId = int(idFloat)
+	if tokenString, err := c.Cookie("image-web-auth_token"); err == nil && tokenString != "" {
+		secretKey := []byte(os.Getenv("SECRET_KEY"))
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrSignatureInvalid
+			}
+			return secretKey, nil
+		})
+
+		if err == nil && token != nil && token.Valid {
+			if claims, ok := token.Claims.(jwt.MapClaims); ok {
+				c.Set("auth_token", claims)
+			} else {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Fail to extract token from cookie"})
+				return
 			}
 		}
 	}
