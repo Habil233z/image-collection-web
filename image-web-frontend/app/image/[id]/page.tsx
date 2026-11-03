@@ -16,16 +16,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import Comments from "@/components/comments";
 
 export default function ImageDetail() {
     const params = useParams()
-    const id = params?.id
+    const id = params?.id as string
     const router = useRouter()
 
     const [username, setUsername] = useState<string | null>(null)
@@ -34,10 +29,6 @@ export default function ImageDetail() {
     const [liked, setLiked] = useState<boolean>(false)
     const [comment, setComment] = useState<string>("")
     const [comments, setComments] = useState<any[]>([])
-
-    const [commentId, setCommentId] = useState<any | null>(null)
-    const [editCommentText, setEditCommentText] = useState<string>("")
-    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false)
 
     const [page, setPage] = useState<number>(1)
     const [hasMore, setHasMore] = useState<boolean>(true)
@@ -67,7 +58,6 @@ export default function ImageDetail() {
     async function getLikes() {
         try {
             const response = await api.get(`http://localhost:8080/image/${id}/likes`)
-            console.log(response.data)
             if (response.data.isLiked) {
                 setLiked(true)
             }
@@ -106,43 +96,15 @@ export default function ImageDetail() {
         try {
             const response = await api.get(`http://localhost:8080/image/${id}/comments?page=${pageNum}`)
             if (response.data.data === null) {
+                setComments([])
                 return
             }
             setComments(response.data.data)
-              if (response.data.data.length < 8) {
-            setHasMore(false)
+            if (response.data.data.length < 8) {
+                setHasMore(false)
             } else {
-            setHasMore(true)
+                setHasMore(true)
             }
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
-    async function editComment() {
-        try {
-            if (!editCommentText.trim()) {
-                const inputEl = document.getElementById("editCommentInput") as HTMLInputElement
-                inputEl?.reportValidity()
-                return
-            }
-            await api.patch(`http://localhost:8080/api/image/${id}/comment/${commentId}`, { editCommentText })
-            alert("Comment has been edited")
-            setIsDialogOpen(false)
-            getComments(page)
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
-    async function deleteComment(commentId: any) {
-        if (!window.confirm("Are you sure you want to delete this comment?")) {
-            return
-        }
-        try {
-            await api.delete(`http://localhost:8080/api/image/${id}/comment/${commentId}`)
-            setComments([])
-            getComments(page)
         } catch (error) {
             console.log(error)
         }
@@ -156,13 +118,13 @@ export default function ImageDetail() {
             getComments(page)
             getLikes()
         }
-    }, [page]);
+    }, [page, id]);
 
     return (
         <div className="min-h-screen w-full bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col pb-16">
             <Header username={username} />
 
-{/* Image card area */}
+            {/* Image card area */}
             <main className="flex-1 w-full px-6 sm:px-12 flex flex-col items-center">
                 {imageDetail && (
                     <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-6 sm:p-8 w-full max-w-6xl border border-white/60 flex flex-col items-center mb-8">
@@ -173,7 +135,7 @@ export default function ImageDetail() {
                                 className="max-h-150 w-auto rounded-2xl object-contain shadow-md mb-6" 
                                 alt={imageDetail.image_name}
                             />  
-                                {username === imageDetail.username ? (
+                            {username === imageDetail.username ? (
                                 <div className="flex justify-between items-center w-full px-2 mt-2 text-gray-600 border-t border-gray-100 pt-4">
                                     <h2 className="text-base sm:text-lg font-medium text-gray-700">Created by <span className="font-semibold text-sky-600">{imageDetail.username} (You)</span></h2>
                                     <div className="flex items-center">
@@ -199,28 +161,26 @@ export default function ImageDetail() {
                                     </DropdownMenu>
                                     </div>
                                 </div>
-                                ) : (
-                                    <div className="flex justify-between items-center w-full px-2 mt-2 text-gray-600 border-t border-gray-100 pt-4">
-                                        <h2 className="text-base sm:text-lg font-medium text-gray-700">Created by <span className="font-semibold text-sky-600">{imageDetail.username}</span></h2>
-                                        <p className="text-xs sm:text-sm font-light text-gray-400">Created at: {new Date(imageDetail.created_at).toLocaleDateString()}</p>
-                                    </div>
-                                )}
+                            ) : (
+                                <div className="flex justify-between items-center w-full px-2 mt-2 text-gray-600 border-t border-gray-100 pt-4">
+                                    <h2 className="text-base sm:text-lg font-medium text-gray-700">Created by <span className="font-semibold text-sky-600">{imageDetail.username}</span></h2>
+                                    <p className="text-xs sm:text-sm font-light text-gray-400">Created at: {new Date(imageDetail.created_at).toLocaleDateString()}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
 
-{/* Comment card area */}
+                {/* Comment card area */}
                 <div className="w-full max-w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 p-6 sm:p-8 flex flex-col">
 
                     <div className="flex w-full justify-center">
                         <h2>{likesCount}</h2>
-                        <div onClick={() => handleLike()}>
                         {liked ? (
-                            <svg width="36" height="36" viewBox="0 0 48 48" ><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                            <svg onClick={() => handleLike()} className="cursor-pointer" width="36" height="36" viewBox="0 0 48 48" ><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
                         ):(
-                            <svg width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                            <svg onClick={() => handleLike()} className="cursor-pointer" width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
                         )}
-                        </div>
                     </div>
 
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 text-center">Comments</h2>
@@ -228,60 +188,18 @@ export default function ImageDetail() {
                         <>
                         <div className="flex flex-wrap gap-4 w-full mb-6">
                             {comments.map((commentItem) => (
-                                <div key={commentItem.id} className="bg-white/80 backdrop-blur-xs rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm transition hover:shadow-md flex flex-col justify-between">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-start gap-4">
-                                            <div className="w-12 h-12 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
-                                                <img className="h-full w-full object-cover" src="test" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png" }} alt="User Avatar" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-base font-semibold text-gray-900">{commentItem.username}</h3>
-                                                <p className="text-gray-600 break-all mt-1 text-sm sm:text-base">{commentItem.comment}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-1">
-                                            {username === commentItem.username && (
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger className="focus:outline-none">
-                                                        <div className="font-bold text-base cursor-pointer w-7 h-7 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-gray-600 transition shadow-xs">
-                                                            ⋮
-                                                        </div>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-32 rounded-2xl p-1 shadow-xl bg-white/95 backdrop-blur-md border border-white/80">
-                                                        <DropdownMenuGroup>
-                                                            <DropdownMenuItem 
-                                                                onClick={() => { 
-                                                                    setEditCommentText(commentItem.comment); 
-                                                                    setIsDialogOpen(true); 
-                                                                    setCommentId(commentItem.id); 
-                                                                }} 
-                                                                className="cursor-pointer font-medium rounded-xl px-3 py-1.5 focus:bg-sky-50 focus:text-sky-600 transition"
-                                                            >
-                                                                Edit
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuGroup>
-                                                        <DropdownMenuSeparator className="my-1 border-gray-100" />
-                                                        <DropdownMenuGroup>
-                                                            <DropdownMenuItem 
-                                                                onClick={() => deleteComment(commentItem.id)} 
-                                                                className="cursor-pointer text-red-600 font-medium rounded-xl px-3 py-1.5 focus:bg-red-50 focus:text-red-700 transition"
-                                                            >
-                                                                Delete
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuGroup>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="mt-3 pt-2 border-t border-gray-100 flex justify-end">
-                                        <p className="text-xs text-gray-400">{new Date(commentItem.created_at).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
+                                <Comments 
+                                    key={commentItem.id}
+                                    commentItem={commentItem}
+                                    username={username}
+                                    imageId={id}
+                                    page={page}
+                                    getComments={getComments}
+                                    setComments={setComments}
+                                />
                             ))}
                         </div>
-                            {comments && comments.length > 0 && (
-                                <div className="flex justify-center items-center gap-4 mt-2 pb-4">
+                            <div className="flex justify-center items-center gap-4 mt-2 pb-4">
                                 <Button 
                                     onClick={() => setPage((prev) => Math.max(prev - 1, 1))} 
                                     disabled={page === 1}
@@ -299,8 +217,7 @@ export default function ImageDetail() {
                                 >
                                     Next Page
                                 </Button>
-                                </div>
-                            )}
+                            </div>
                         </>
                     ) : (
                         <p className="text-lg font-medium text-gray-400 text-center py-6">No Comments yet. Be the first to comment!</p>
@@ -323,29 +240,6 @@ export default function ImageDetail() {
                     </div>
                 </div>
             </main>
-
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-md rounded-3xl bg-white/95 backdrop-blur-md border border-white/60 p-6">
-                    <DialogHeader className="space-y-4">
-                        <DialogTitle className="text-center text-2xl font-bold text-gray-900">Edit Comment</DialogTitle>
-                        <div className="flex flex-col gap-4 pt-2">
-                            <input 
-                                id="editCommentInput" 
-                                type="text" 
-                                className="w-full text-black border border-gray-200 rounded-xl text-sm sm:text-base px-4 py-3 bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 transition" 
-                                placeholder="Update your comment..." 
-                                value={editCommentText} 
-                                onChange={(e) => setEditCommentText(e.target.value)} 
-                                required
-                            />
-                            <div className="flex justify-end gap-2 mt-2">
-                                <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-full px-5 py-2.5 border-gray-300">Cancel</Button>
-                                <Button onClick={() => editComment()} className="bg-neutral-900 hover:bg-black text-white rounded-full px-6 py-2.5 shadow-lg">Save Comment</Button>
-                            </div>
-                        </div>
-                    </DialogHeader>
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }
