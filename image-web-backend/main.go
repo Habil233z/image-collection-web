@@ -56,6 +56,7 @@ func main() {
 	router.GET("/image/:id/likes", likeHandlers.GetLikeImage)
 
 	router.GET("/image/:id/comments", commentHandlers.GetComments)
+	router.GET("/image/:id/comment/:commentId/likes", likeHandlers.GetLikeComment)
 
 	api := router.Group("/api")
 	api.Use(authMiddleware.AuthMiddleware())
@@ -71,6 +72,8 @@ func main() {
 		api.POST("/image/:id/comments", commentHandlers.PostComment)
 		api.PATCH("/image/:id/comment/:commentId", commentHandlers.EditComment)
 		api.DELETE("/image/:id/comment/:commentId", commentHandlers.DeleteComment)
+
+		api.POST("/image/:id/comment/:commentId/like", likeHandlers.ToggleLikeComment)
 	}
 
 	router.Run("localhost:8080")

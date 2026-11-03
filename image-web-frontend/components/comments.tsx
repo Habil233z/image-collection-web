@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 
@@ -32,46 +32,60 @@ export default function Comments({
     setComments
 }: CommentItemProps) {
 
-    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false)
-    const [editCommentText, setEditCommentText] = useState<string>("")
-    const [liked, setLiked] = useState<boolean>(false)
+    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+    const [editCommentText, setEditCommentText] = useState<string>("");
+    const [liked, setLiked] = useState<boolean>(false);
+    const [likeCount, setLikeCount] = useState<number>(0);
 
-    async function handleLike() {
+    useEffect(() => {
+        getLike()
+    }, [commentItem.id]);
+
+    async function getLike() {
         try {
-            setLiked(!liked)
-            await api.post(`http://localhost:8080/api/image/${imageId}/comment/like`)
+            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentItem.id}/likes`);
+            setLiked(response.data.liked);
+            setLikeCount(response.data.likeCount);
         } catch (error) {
-            console.log(error)
+            console.log("Failed to fetch like status", error);
         }
     }
-
+    
+    async function handleLike() {
+        try {
+            const response = await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}/like`);
+            getLike()
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
     async function editComment() {
         try {
             if (!editCommentText.trim()) {
-                const input = document.getElementById("editCommentInput") as HTMLInputElement
-                input?.reportValidity()
-                return
+                const input = document.getElementById("editCommentInput") as HTMLInputElement;
+                input?.reportValidity();
+                return;
             }
-            await api.patch(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}`, { editCommentText })
-            alert("Comment has been edited")
-            setIsDialogOpen(false)
-            getComments(page)
+            await api.patch(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}`, { editCommentText });
+            alert("Comment has been edited");
+            setIsDialogOpen(false);
+            getComments(page);
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
     }
 
     async function deleteComment(commentId: any) {
         if (!window.confirm("Are you sure you want to delete this comment?")) {
-            return
+            return;
         }
         try {
-            await api.delete(`http://localhost:8080/api/image/${imageId}/comment/${commentId}`)
-            setComments([])
-            getComments(page)
+            await api.delete(`http://localhost:8080/api/image/${imageId}/comment/${commentId}`);
+            setComments([]);
+            getComments(page);
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
     }
 
@@ -124,13 +138,16 @@ export default function Comments({
                     )}
                 </div>
             </div>
-            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-end">
-                {liked ? (
-                    <svg onClick={() => handleLike()} className="cursor-pointer" width="36" height="36" viewBox="0 0 48 48" ><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                ):(
-                    <svg onClick={() => handleLike()} className="cursor-pointer" width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                )}
-                <p>reply</p>
+            <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
+                <div className="flex items-center gap-1 cursor-pointer" onClick={handleLike}>
+                    {liked ? (
+                        <svg width="28" height="28" viewBox="0 0 48 48"><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                    ):(
+                        <svg width="28" height="28" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                    )}
+                    <span className="text-sm font-medium text-gray-700">{likeCount}</span>
+                </div>
+                <p className="text-sm font-medium text-gray-500 ml-4">reply</p>
             </div>
         </div>
 
@@ -150,12 +167,11 @@ export default function Comments({
                         />
                         <div className="flex justify-end gap-2 mt-2">
                             <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-full px-5 py-2.5 border-gray-300">Cancel</Button>
-                            <Button onClick={() => editComment()} className="bg-neutral-900 hover:bg-black text-white rounded-full px-6 py-2.5 shadow-lg">Save Comment</Button>                            
-                        </div>
+                            <Button onClick={() => editComment()} className="bg-neutral-900 hover:bg-black text-white rounded-full px-6 py-2.5 shadow-lg">Save Comment</Button>                         </div>
                     </div>
                 </DialogHeader>
             </DialogContent>
         </Dialog>
         </>
-    )
+    );
 }

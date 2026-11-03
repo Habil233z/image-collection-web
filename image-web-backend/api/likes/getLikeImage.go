@@ -20,7 +20,6 @@ func (d *Database) GetLikeImage(c *gin.Context) {
 	var userId int
 	var isLiked bool
 
-	// Try reading and validating the cookie inline
 	if tokenString, err := c.Cookie("image-web-auth_token"); err == nil && tokenString != "" {
 		secretKey := []byte(os.Getenv("SECRET_KEY"))
 
@@ -31,7 +30,6 @@ func (d *Database) GetLikeImage(c *gin.Context) {
 			return secretKey, nil
 		})
 
-		// If token is valid, extract claims and assign to userId
 		if err == nil && token != nil && token.Valid {
 			if claims, ok := token.Claims.(jwt.MapClaims); ok {
 				switch idVal := claims["id"]; value := idVal.(type) {
@@ -48,7 +46,6 @@ func (d *Database) GetLikeImage(c *gin.Context) {
 		}
 	}
 
-	// Fetch total like count for the image
 	var count int
 	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT COUNT(*) FROM likes_image WHERE image_id = $1", imageId).Scan(&count)
 	if err != nil {
@@ -56,7 +53,6 @@ func (d *Database) GetLikeImage(c *gin.Context) {
 		return
 	}
 
-	// If userId was successfully extracted from the cookie, check if they liked it
 	if userId > 0 {
 		err = d.DB.Pool.QueryRow(
 			c.Request.Context(),
