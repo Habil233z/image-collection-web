@@ -60,6 +60,8 @@ func main() {
 	router.GET("/image/:id/comments", commentHandlers.GetComments)
 	router.GET("/image/:id/comment/:commentId/likes", likeHandlers.GetLikeComment)
 
+	router.GET("/image/:id/comment/:commentId/replies", replyHandlers.GetReplies)
+
 	api := router.Group("/api")
 	api.Use(authMiddleware.AuthMiddleware())
 	{

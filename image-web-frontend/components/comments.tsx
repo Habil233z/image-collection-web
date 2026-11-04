@@ -37,9 +37,9 @@ export default function Comments({
     const [liked, setLiked] = useState<boolean>(false);
     const [likeCount, setLikeCount] = useState<number>(0);
 
-    useEffect(() => {
-        getLike()
-    }, [commentItem.id]);
+    const [isReplying, setIsReplying] = useState<boolean>(false);
+    const [reply, setReply] = useState<string>("");
+    const [replies, setReplies] = useState<any[]>([]);
 
     async function getLike() {
         try {
@@ -88,6 +88,32 @@ export default function Comments({
             console.log(error);
         }
     }
+
+    async function getReply(commentId: any) {
+        try {
+            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentId}/replies`);
+            setReplies(response.data.data || []);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async function replyComment(commentId: any) {
+    if (!reply.trim()) return;
+    try {
+      await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentId}/reply`, { reply });
+      setReply("");
+      setIsReplying(false);
+      getReply(commentId);
+    } catch (error) {
+      console.error("Failed to post reply:", error);
+    }
+  }
+
+    useEffect(() => {
+        getLike()
+        getReply(commentItem.id)
+    }, [commentItem.id]);
 
     return (
         <>
@@ -147,8 +173,49 @@ export default function Comments({
                     )}
                     <span className="text-sm font-medium text-gray-700">{likeCount}</span>
                 </div>
-                <p className="text-sm font-medium text-gray-500 ml-4">reply</p>
+                <div className="flex justify-end items-center mt-1">
+                    <button
+                    onClick={() => setIsReplying(!isReplying)}
+                    className="text-xs font-medium text-sky-600 hover:text-sky-700 transition"
+                    >
+                    {isReplying ? "Cancel Reply" : "Reply"}
+                    </button>
+                </div>
             </div>
+            {isReplying && (
+                <div className="flex flex-col gap-2 mt-2 pl-4 border-l-2 border-sky-200">
+                <input
+                    type="text"
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
+                    placeholder={`Reply to ${commentItem.username}...`}
+                    required
+                    className="w-full text-black border border-gray-200 rounded-xl text-xs sm:text-sm px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-400 transition"
+                />
+                <div className="flex justify-end gap-2">
+                    <Button
+                    onClick={() => replyComment(commentItem.id)}
+                    className="bg-neutral-900 hover:bg-black text-white text-xs px-4 py-1.5 rounded-full transition shadow-xs"
+                    >
+                    Sent reply
+                    </Button>
+                </div>
+                </div>
+            )}
+            {/* Display Fetched Replies */}
+            {replies && replies.length > 0 && (
+                <div className="mt-4 pl-4 border-l-2 border-gray-200 flex flex-col gap-3">
+                    {replies.map((replyItem) => (
+                        <div key={replyItem.id} className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1">
+                            <div className="flex items-center justify-between">
+                                <span className="font-semibold text-gray-900 text-xs sm:text-sm">{replyItem.username}</span>
+                                <span className="text-[10px] text-gray-400">{new Date(replyItem.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-gray-700 text-xs sm:text-sm break-all">{replyItem.reply}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

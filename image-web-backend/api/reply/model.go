@@ -9,8 +9,8 @@ type Database struct {
 	DB *database.Postgres
 }
 
-type Reply struct {
-	ID        int       `json:"id"`
+type ReplyResponse struct {
+	Id        int       `json:"id"`
 	CommentId int       `json:"comment_id"`
 	UserId    int       `json:"user_id"`
 	Username  string    `json:"username"`
