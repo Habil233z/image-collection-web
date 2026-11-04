@@ -1,0 +1,7 @@
+package reply
+
+import "image-web-backend/resources/database"
+
+type Database struct {
+	DB *database.Postgres
+}
