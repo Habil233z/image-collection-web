@@ -135,7 +135,7 @@ export default function Comments({
 
     return (
         <>
-        <div key={commentItem.id} className="bg-white/80 backdrop-blur-xs rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm transition hover:shadow-md flex flex-col justify-between">
+        <div key={commentItem.id} className="bg-white/80 backdrop-blur-xs rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm transition hover:shadow-md flex flex-col justify-between self-start">
             <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
