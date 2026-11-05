@@ -82,6 +82,8 @@ func main() {
 		api.POST("/image/:id/comment/:commentId/like", likeHandlers.ToggleLikeComment)
 
 		api.POST("/image/:id/comment/:commentId/reply", replyHandlers.PostReply)
+		api.PATCH("/image/:id/comment/:commentId/reply/:replyId", replyHandlers.EditReply)
+		api.DELETE("/image/:id/comment/:commentId/reply/:replyId", replyHandlers.DeleteReply)
 		api.POST("/image/:id/comment/:commentId/reply/:replyId/like", likeHandlers.ToggleLikeReply)
 	}
 
