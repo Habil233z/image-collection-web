@@ -39,8 +39,11 @@ export default function Comments({
 
     const [isReplying, setIsReplying] = useState<boolean>(false);
     const [reply, setReply] = useState<string>("");
-    const [replies, setReplies] = useState<any[]>([]);
 
+    const [showReplies, setShowReplies] = useState<boolean>(false);
+    const [replies, setReplies] = useState<any[]>([]);
+    const [repliesCount, setRepliesCount] = useState<number>(0)
+    
     async function getLike() {
         try {
             const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentItem.id}/likes`);
@@ -53,8 +56,7 @@ export default function Comments({
     
     async function handleLike() {
         try {
-            const response = await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}/like`);
-            getLike()
+            await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}/like`);
         } catch (error) {
             console.log(error);
         }
@@ -76,12 +78,12 @@ export default function Comments({
         }
     }
 
-    async function deleteComment(commentId: any) {
+    async function deleteComment() {
         if (!window.confirm("Are you sure you want to delete this comment?")) {
             return;
         }
         try {
-            await api.delete(`http://localhost:8080/api/image/${imageId}/comment/${commentId}`);
+            await api.delete(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}`);
             setComments([]);
             getComments(page);
         } catch (error) {
@@ -89,13 +91,29 @@ export default function Comments({
         }
     }
 
-    async function getReply(commentId: any) {
+    async function getReplyCount() {
         try {
-            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentId}/replies`);
+            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentItem.id}/replies/count`)
+            setRepliesCount(response.data.replyCount)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    async function getReply() {
+        try {
+            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentItem.id}/replies`);
             setReplies(response.data.data || []);
         } catch (error) {
             console.log(error);
         }
+    }
+
+    async function handleToggleReplies() {
+        if (!showReplies) {
+            await getReply();
+        }
+        setShowReplies(!showReplies);
     }
 
     async function replyComment(commentId: any) {
@@ -104,7 +122,7 @@ export default function Comments({
       await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentId}/reply`, { reply });
       setReply("");
       setIsReplying(false);
-      getReply(commentId);
+      getReply();
     } catch (error) {
       console.error("Failed to post reply:", error);
     }
@@ -112,8 +130,8 @@ export default function Comments({
 
     useEffect(() => {
         getLike()
-        getReply(commentItem.id)
-    }, [commentItem.id]);
+        getReplyCount()
+    }, []);
 
     return (
         <>
@@ -154,7 +172,7 @@ export default function Comments({
                                 <DropdownMenuSeparator className="my-1 border-gray-100" />
                                 <DropdownMenuGroup>
                                     <DropdownMenuItem 
-                                        onClick={() => deleteComment(commentItem.id)} 
+                                        onClick={() => deleteComment()} 
                                         className="cursor-pointer text-red-600 font-medium rounded-xl px-3 py-1.5 focus:bg-red-50 focus:text-red-700 transition">
                                         Delete
                                     </DropdownMenuItem>
@@ -165,21 +183,33 @@ export default function Comments({
                 </div>
             </div>
             <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
-                <div className="flex items-center gap-1 cursor-pointer" onClick={handleLike}>
-                    {liked ? (
-                        <svg width="28" height="28" viewBox="0 0 48 48"><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                    ):(
-                        <svg width="28" height="28" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                    )}
-                    <span className="text-sm font-medium text-gray-700">{likeCount}</span>
-                </div>
-                <div className="flex justify-end items-center mt-1">
+                <div>
                     <button
-                    onClick={() => setIsReplying(!isReplying)}
-                    className="text-xs font-medium text-sky-600 hover:text-sky-700 transition"
+                        onClick={handleToggleReplies}
+                        className="text-xs font-semibold text-gray-500 hover:text-gray-700 transition"
                     >
-                    {isReplying ? "Cancel Reply" : "Reply"}
+                        {showReplies ? "Hide Replies" : "View Replies"}
                     </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 cursor-pointer" onClick={handleLike}>
+                        {liked ? (
+                            <svg width="28" height="28" viewBox="0 0 48 48"><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                        ):(
+                            <svg width="28" height="28" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                        )}
+                        <span className="text-sm font-medium text-gray-700">{likeCount}</span>
+                    </div>
+                    <div className="flex justify-end items-center mt-1">
+                        <button
+                        onClick={() => setIsReplying(!isReplying)}
+                        className="text-xs font-medium text-sky-600 hover:text-sky-700 transition"
+                        >
+                        {isReplying ? "Cancel Reply" : "Reply"}
+                        </button>
+                    </div>
+                    <h1>{repliesCount}</h1>
                 </div>
             </div>
             {isReplying && (
@@ -202,18 +232,22 @@ export default function Comments({
                 </div>
                 </div>
             )}
-            {/* Display Fetched Replies */}
-            {replies && replies.length > 0 && (
+
+            {showReplies && (
                 <div className="mt-4 pl-4 border-l-2 border-gray-200 flex flex-col gap-3">
-                    {replies.map((replyItem) => (
-                        <div key={replyItem.id} className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1">
-                            <div className="flex items-center justify-between">
-                                <span className="font-semibold text-gray-900 text-xs sm:text-sm">{replyItem.username}</span>
-                                <span className="text-[10px] text-gray-400">{new Date(replyItem.created_at).toLocaleDateString()}</span>
+                    {replies.length > 0 ? (
+                        replies.map((replyItem) => (
+                            <div key={replyItem.id} className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-semibold text-gray-900 text-xs sm:text-sm">{replyItem.username}</span>
+                                    <span className="text-[10px] text-gray-400">{new Date(replyItem.created_at).toLocaleDateString()}</span>
+                                </div>
+                                <p className="text-gray-700 text-xs sm:text-sm break-all">{replyItem.reply}</p>
                             </div>
-                            <p className="text-gray-700 text-xs sm:text-sm break-all">{replyItem.reply}</p>
-                        </div>
-                    ))}
+                        ))
+                    ) : (
+                        <p className="text-xs">No replies yet.</p>
+                    )}
                 </div>
             )}
         </div>

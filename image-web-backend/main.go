@@ -5,7 +5,7 @@ import (
 	"image-web-backend/api/comments"
 	"image-web-backend/api/images"
 	"image-web-backend/api/likes"
-	replys "image-web-backend/api/reply"
+	"image-web-backend/api/replys"
 
 	"log"
 	"time"
@@ -61,6 +61,7 @@ func main() {
 	router.GET("/image/:id/comment/:commentId/likes", likeHandlers.GetLikeComment)
 
 	router.GET("/image/:id/comment/:commentId/replies", replyHandlers.GetReplies)
+	router.GET("/image/:id/comment/:commentId/replies/count", replyHandlers.GetReplyCount)
 
 	api := router.Group("/api")
 	api.Use(authMiddleware.AuthMiddleware())
