@@ -61,6 +61,7 @@ func main() {
 	router.GET("/image/:id/comment/:commentId/likes", likeHandlers.GetLikeComment)
 
 	router.GET("/image/:id/comment/:commentId/replies", replyHandlers.GetReplies)
+	router.GET("/image/:id/comment/:commentId/replies/:replyId/likes", likeHandlers.GetLikeReply)
 	router.GET("/image/:id/comment/:commentId/replies/count", replyHandlers.GetReplyCount)
 
 	api := router.Group("/api")
@@ -81,6 +82,7 @@ func main() {
 		api.POST("/image/:id/comment/:commentId/like", likeHandlers.ToggleLikeComment)
 
 		api.POST("/image/:id/comment/:commentId/reply", replyHandlers.PostReply)
+		api.POST("/image/:id/comment/:commentId/reply/:replyId/like", likeHandlers.ToggleLikeReply)
 	}
 
 	router.Run("localhost:8080")

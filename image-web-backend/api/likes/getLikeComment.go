@@ -44,8 +44,8 @@ func (d *Database) GetLikeComment(c *gin.Context) {
 		}
 	}
 
-	var existsQuery bool
-	err = d.DB.Pool.QueryRow(c, "SELECT EXISTS(SELECT 1 FROM likes_comment WHERE user_id = $1 AND comment_id = $2)", userId, commentId).Scan(&existsQuery)
+	var isLiked bool
+	err = d.DB.Pool.QueryRow(c, "SELECT EXISTS(SELECT 1 FROM likes_comment WHERE user_id = $1 AND comment_id = $2)", userId, commentId).Scan(&isLiked)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
@@ -59,7 +59,7 @@ func (d *Database) GetLikeComment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"liked":     existsQuery,
+		"isLiked":   isLiked,
 		"likeCount": count,
 	})
 }

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import Replies from "@/components/replies";
 
 interface CommentItemProps {
     commentItem: any;
@@ -32,8 +33,9 @@ export default function Comments({
     setComments
 }: CommentItemProps) {
 
-    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+    const [isEditCommentDialogOpen, setIsEditCommentDialogOpen] = useState<boolean>(false);
     const [editCommentText, setEditCommentText] = useState<string>("");
+
     const [liked, setLiked] = useState<boolean>(false);
     const [likeCount, setLikeCount] = useState<number>(0);
 
@@ -42,12 +44,12 @@ export default function Comments({
 
     const [showReplies, setShowReplies] = useState<boolean>(false);
     const [replies, setReplies] = useState<any[]>([]);
-    const [repliesCount, setRepliesCount] = useState<number>(0)
-    
+    const [repliesCount, setRepliesCount] = useState<number>(0);
+
     async function getLike() {
         try {
             const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentItem.id}/likes`);
-            setLiked(response.data.liked);
+            setLiked(response.data.isLiked);
             setLikeCount(response.data.likeCount);
         } catch (error) {
             console.log("Failed to fetch like status", error);
@@ -57,6 +59,7 @@ export default function Comments({
     async function handleLike() {
         try {
             await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}/like`);
+            getLike();
         } catch (error) {
             console.log(error);
         }
@@ -71,7 +74,7 @@ export default function Comments({
             }
             await api.patch(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}`, { editCommentText });
             alert("Comment has been edited");
-            setIsDialogOpen(false);
+            setIsEditCommentDialogOpen(false);
             getComments(page);
         } catch (error) {
             console.log(error);
@@ -93,10 +96,10 @@ export default function Comments({
 
     async function getReplyCount() {
         try {
-            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentItem.id}/replies/count`)
-            setRepliesCount(response.data.replyCount)
+            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentItem.id}/replies/count`);
+            setRepliesCount(response.data.replyCount);
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
     }
 
@@ -114,24 +117,24 @@ export default function Comments({
             await getReply();
         }
         setShowReplies(!showReplies);
-        setIsReplying(false)
+        setIsReplying(false);
     }
 
-    async function replyComment(commentId: any) {
-    if (!reply.trim()) return;
-    try {
-      await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentId}/reply`, { reply });
-      setReply("");
-      setIsReplying(false);
-      getReply();
-    } catch (error) {
-      console.error("Failed to post reply:", error);
+    async function replyComment() {
+        try {
+            await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}/reply`, { reply });
+            setReply("");
+            setIsReplying(false);
+            getReply();
+            getReplyCount();
+        } catch (error) {
+            console.error("Failed to post reply:", error);
+        }
     }
-  }
 
     useEffect(() => {
-        getLike()
-        getReplyCount()
+        getLike();
+        getReplyCount();
     }, []);
 
     return (
@@ -153,17 +156,17 @@ export default function Comments({
                 <div className="flex flex-col items-end gap-1">
                     {username === commentItem.username && (
                         <DropdownMenu>
-                                <DropdownMenuTrigger className="focus:outline-none">
-                                    <div className="font-bold text-base cursor-pointer w-7 h-7 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-gray-600 transition shadow-xs">
-                                        ⋮
-                                    </div>
-                                </DropdownMenuTrigger>
+                            <DropdownMenuTrigger className="focus:outline-none">
+                                <div className="font-bold text-base cursor-pointer w-7 h-7 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-gray-600 transition shadow-xs">
+                                    ⋮
+                                </div>
+                            </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-32 rounded-2xl p-1 shadow-xl bg-white/95 backdrop-blur-md border border-white/80">
                                 <DropdownMenuGroup>
                                     <DropdownMenuItem 
                                         onClick={() => { 
                                             setEditCommentText(commentItem.comment); 
-                                            setIsDialogOpen(true); 
+                                            setIsEditCommentDialogOpen(true); 
                                         }} 
                                         className="cursor-pointer font-medium rounded-xl px-3 py-1.5 focus:bg-sky-50 focus:text-sky-600 transition"
                                     >
@@ -173,7 +176,7 @@ export default function Comments({
                                 <DropdownMenuSeparator className="my-1 border-gray-100" />
                                 <DropdownMenuGroup>
                                     <DropdownMenuItem 
-                                        onClick={() => deleteComment()} 
+                                        onClick={deleteComment} 
                                         className="cursor-pointer text-red-600 font-medium rounded-xl px-3 py-1.5 focus:bg-red-50 focus:text-red-700 transition">
                                         Delete
                                     </DropdownMenuItem>
@@ -183,6 +186,7 @@ export default function Comments({
                     )}
                 </div>
             </div>
+
             <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
                 <div>
                     <button
@@ -197,40 +201,41 @@ export default function Comments({
                     <div className="flex items-center gap-1 cursor-pointer" onClick={handleLike}>
                         {liked ? (
                             <svg width="28" height="28" viewBox="0 0 48 48"><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                        ):(
+                        ) : (
                             <svg width="28" height="28" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
                         )}
                         <span className="text-sm font-medium text-gray-700">{likeCount}</span>
                     </div>
                     <div className="flex justify-end items-center mt-1">
                         <button
-                        onClick={() => {setIsReplying(!isReplying), getReply(),setShowReplies(true)}}
-                        className="text-xs font-medium text-sky-600 hover:text-sky-700 transition"
+                            onClick={() => { setIsReplying(!isReplying); getReply(); setShowReplies(true); }}
+                            className="text-xs font-medium text-sky-600 hover:text-sky-700 transition"
                         >
-                        {isReplying ? "Cancel Reply" : "Reply"}
+                            {isReplying ? "Cancel Reply" : "Reply"}
                         </button>
                     </div>
                     <h1>{repliesCount}</h1>
                 </div>
             </div>
+
             {isReplying && (
                 <div className="flex flex-col gap-2 mt-2 pl-4 border-l-2 border-sky-200">
-                <input
-                    type="text"
-                    value={reply}
-                    onChange={(e) => setReply(e.target.value)}
-                    placeholder={`Reply to ${commentItem.username}...`}
-                    required
-                    className="w-full text-black border border-gray-200 rounded-xl text-xs sm:text-sm px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-400 transition"
-                />
-                <div className="flex justify-end gap-2">
-                    <Button
-                    onClick={() => replyComment(commentItem.id)}
-                    className="bg-neutral-900 hover:bg-black text-white text-xs px-4 py-1.5 rounded-full transition shadow-xs"
-                    >
-                    Sent reply
-                    </Button>
-                </div>
+                    <input
+                        type="text"
+                        value={reply}
+                        onChange={(e) => setReply(e.target.value)}
+                        placeholder={`Reply to ${commentItem.username}...`}
+                        required
+                        className="w-full text-black border border-gray-200 rounded-xl text-xs sm:text-sm px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-400 transition"
+                    />
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            onClick={replyComment}
+                            className="bg-neutral-900 hover:bg-black text-white text-xs px-4 py-1.5 rounded-full transition shadow-xs"
+                        >
+                            Sent reply
+                        </Button>
+                    </div>
                 </div>
             )}
 
@@ -238,22 +243,24 @@ export default function Comments({
                 <div className="mt-4 pl-4 border-l-2 border-gray-200 flex flex-col gap-3">
                     {replies.length > 0 ? (
                         replies.map((replyItem) => (
-                            <div key={replyItem.id} className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1">
-                                <div className="flex items-center justify-between">
-                                    <span className="font-semibold text-gray-900 text-xs sm:text-sm">{replyItem.username}</span>
-                                    <span className="text-[10px] text-gray-400">{new Date(replyItem.created_at).toLocaleDateString()}</span>
-                                </div>
-                                <p className="text-gray-700 text-xs sm:text-sm break-all">{replyItem.reply}</p>
-                            </div>
+                            <Replies 
+                                key={replyItem.id}
+                                replyItem={replyItem}
+                                username={username}
+                                imageId={imageId}
+                                commentId={commentItem.id}
+                                commentUsername={commentItem.username}
+                                getReply={getReply}
+                            />
                         ))
                     ) : (
-                        <p className="text-xs">No replies yet.</p>
+                        <p className="text-xs text-gray-500">No replies yet.</p>
                     )}
                 </div>
             )}
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isEditCommentDialogOpen} onOpenChange={setIsEditCommentDialogOpen}>
             <DialogContent className="sm:max-w-md rounded-3xl bg-white/95 backdrop-blur-md border border-white/60 p-6">
                 <DialogHeader className="space-y-4">
                     <DialogTitle className="text-center text-2xl font-bold text-gray-900">Edit Comment</DialogTitle>
@@ -268,8 +275,9 @@ export default function Comments({
                             required
                         />
                         <div className="flex justify-end gap-2 mt-2">
-                            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-full px-5 py-2.5 border-gray-300">Cancel</Button>
-                            <Button onClick={() => editComment()} className="bg-neutral-900 hover:bg-black text-white rounded-full px-6 py-2.5 shadow-lg">Save Comment</Button>                         </div>
+                            <Button variant="outline" onClick={() => setIsEditCommentDialogOpen(false)} className="rounded-full px-5 py-2.5 border-gray-300">Cancel</Button>
+                            <Button onClick={editComment} className="bg-neutral-900 hover:bg-black text-white rounded-full px-6 py-2.5 shadow-lg">Save Comment</Button>
+                        </div>
                     </div>
                 </DialogHeader>
             </DialogContent>
