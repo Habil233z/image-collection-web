@@ -204,7 +204,7 @@ export default function Comments({
                     </div>
                     <div className="flex justify-end items-center mt-1">
                         <button
-                        onClick={() => {setIsReplying(!isReplying), setShowReplies(true)}}
+                        onClick={() => {setIsReplying(!isReplying), getReply(),setShowReplies(true)}}
                         className="text-xs font-medium text-sky-600 hover:text-sky-700 transition"
                         >
                         {isReplying ? "Cancel Reply" : "Reply"}
