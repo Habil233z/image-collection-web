@@ -116,6 +116,9 @@ export default function Comments({
         if (!showReplies) {
             await getReply();
         }
+        if (showReplies) {
+            setReplies([]);
+        }
         setShowReplies(!showReplies);
         setIsReplying(false);
     }

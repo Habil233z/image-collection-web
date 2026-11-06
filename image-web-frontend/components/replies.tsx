@@ -17,7 +17,7 @@ import api from "@/lib/api";
 interface ReplyItemProps {
     replyItem: any;
     username: string | null;
-    commentUsername: string; // Added to check alignment against the parent comment author
+    commentUsername: string;
     imageId: string;
     commentId: number;
     getReply: () => void;
@@ -36,7 +36,6 @@ export default function Replies({
     const [isEditReplyDialogOpen, setIsEditReplyDialogOpen] = useState<boolean>(false);
     const [editReplyText, setEditReplyText] = useState<string>(replyItem.reply);
 
-    // Check if the reply author matches the comment owner
     const isOwner = replyItem.username === commentUsername;
 
     async function getReplyLike() {
@@ -88,11 +87,11 @@ export default function Replies({
 
     return (
         <>
-            <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1">
+            
                 {isOwner ? (
-                    // Standard Layout (Left aligned avatar & content)
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-4">
+                    <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 mr-10">
+                    <div className="flex">
+                        <div className="flex gap-4">
                             <div className="w-10 h-10 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
                                 <img className="h-full w-full object-cover" src="test" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png" }} alt="User Avatar" />
                             </div>
@@ -138,8 +137,19 @@ export default function Replies({
                             )}
                         </div>
                     </div>
+                    <div className="flex w-full justify-end mt-1">
+                        <div className="flex items-center gap-1 cursor-pointer" onClick={handleLikeReply}>
+                            {likedReply ? (
+                                <svg width="24" height="24" viewBox="0 0 48 48"><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                            ) : (
+                                <svg width="24" height="24" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                            )}
+                            <span className="text-xs font-medium text-gray-700">{likeReplyCount}</span>
+                        </div>
+                    </div>
+                </div>
                 ) : (
-                    // Mirrored Layout (Right aligned avatar & text)
+                <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 ml-10">
                     <div className="flex items-start justify-between">
                         <div className="flex flex-col items-end gap-1">
                             {username === replyItem.username && (
@@ -187,19 +197,21 @@ export default function Replies({
                             </div>
                         </div>
                     </div>
-                )}
-
-                <div className="flex w-full justify-end mt-1">
-                    <div className="flex items-center gap-1 cursor-pointer" onClick={handleLikeReply}>
-                        {likedReply ? (
-                            <svg width="24" height="24" viewBox="0 0 48 48"><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                        ) : (
-                            <svg width="24" height="24" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                        )}
-                        <span className="text-xs font-medium text-gray-700">{likeReplyCount}</span>
+                    <div className="flex w-full justify-end mt-1">
+                        <div className="flex items-center gap-1 cursor-pointer" onClick={handleLikeReply}>
+                            {likedReply ? (
+                                <svg width="24" height="24" viewBox="0 0 48 48"><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                            ) : (
+                                <svg width="24" height="24" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                            )}
+                            <span className="text-xs font-medium text-gray-700">{likeReplyCount}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+                )}
+
+
+            
 
             <Dialog open={isEditReplyDialogOpen} onOpenChange={setIsEditReplyDialogOpen}>
                 <DialogContent className="sm:max-w-md rounded-3xl bg-white/95 backdrop-blur-md border border-white/60 p-6">

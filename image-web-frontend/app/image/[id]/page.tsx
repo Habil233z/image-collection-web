@@ -124,7 +124,6 @@ export default function ImageDetail() {
         <div className="min-h-screen w-full bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col pb-16">
             <Header username={username} />
 
-            {/* Image card area */}
             <main className="flex-1 w-full px-6 sm:px-12 flex flex-col items-center">
                 {imageDetail && (
                     <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-6 sm:p-8 w-full max-w-6xl border border-white/60 flex flex-col items-center mb-8">
@@ -140,6 +139,14 @@ export default function ImageDetail() {
                                     <h2 className="text-base sm:text-lg font-medium text-gray-700">Created by <span className="font-semibold text-sky-600">{imageDetail.username} (You)</span></h2>
                                     <div className="flex items-center">
                                     <p className="text-xs sm:text-sm font-light text-gray-400 mr-2">Created at: {new Date(imageDetail.created_at).toLocaleDateString()}</p>
+                                    <div className="flex w-full justify-center">
+                                        <h2>{likesCount}</h2>
+                                        {liked ? (
+                                            <svg onClick={() => handleLike()} className="cursor-pointer" width="36" height="36" viewBox="0 0 48 48" ><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                                        ):(
+                                            <svg onClick={() => handleLike()} className="cursor-pointer" width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                                        )}
+                                    </div>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger className="focus:outline-none">
                                             <div className="font-bold text-lg cursor-pointer w-10 h-10 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 transition shadow-xs">
@@ -162,27 +169,24 @@ export default function ImageDetail() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex justify-between items-center w-full px-2 mt-2 text-gray-600 border-t border-gray-100 pt-4">
+                                <div className="flex w-full justify-between items-center px-2 mt-2 text-gray-600 border-t border-gray-100 pt-4">
                                     <h2 className="text-base sm:text-lg font-medium text-gray-700">Created by <span className="font-semibold text-sky-600">{imageDetail.username}</span></h2>
-                                    <p className="text-xs sm:text-sm font-light text-gray-400">Created at: {new Date(imageDetail.created_at).toLocaleDateString()}</p>
+                                    <div className="flex items-center">
+                                        <p className="text-xs sm:text-sm font-light text-gray-400 mr-4">Created at: {new Date(imageDetail.created_at).toLocaleDateString()}</p>
+                                        <h2>{likesCount}</h2>
+                                        {liked ? (
+                                            <svg onClick={() => handleLike()} className="cursor-pointer" width="36" height="36" viewBox="0 0 48 48" ><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                                        ):(
+                                            <svg onClick={() => handleLike()} className="cursor-pointer" width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
                 )}
 
-                {/* Comment card area */}
                 <div className="w-full max-w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 p-6 sm:p-8 flex flex-col">
-
-                    <div className="flex w-full justify-center">
-                        <h2>{likesCount}</h2>
-                        {liked ? (
-                            <svg onClick={() => handleLike()} className="cursor-pointer" width="36" height="36" viewBox="0 0 48 48" ><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                        ):(
-                            <svg onClick={() => handleLike()} className="cursor-pointer" width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                        )}
-                    </div>
-
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 text-center">Comments</h2>
                     {comments && comments.length > 0 ? (
                         <>
