@@ -22,16 +22,16 @@ func (d *Database) GetComments(c *gin.Context) {
 
 	rows, err := d.DB.Pool.Query(c.Request.Context(), `
 	SELECT
-	image_comments.id,
-	image_comments.image_id,
-	image_comments.user_id,
-	image_comments.comment,
-	image_comments.created_at,
+	comments.id,
+	comments.image_id,
+	comments.user_id,
+	comments.comment,
+	comments.created_at,
 	users.username
-	
-	FROM image_comments
-	JOIN users ON image_comments.user_id = users.id
-	WHERE image_comments.image_id = $1
+	s
+	FROM comments
+	JOIN users ON comments.user_id = users.id
+	WHERE comments.image_id = $1
 	ORDER BY created_at ASC
 	LIMIT $2 OFFSET $3
 	`, id, limit, offset)
@@ -44,7 +44,7 @@ func (d *Database) GetComments(c *gin.Context) {
 	var comments []Comments
 	for rows.Next() {
 		var comment Comments
-		if err := rows.Scan(&comment.Id, &comment.Image_id, &comment.User_id, &comment.Comment, &comment.Created_at, &comment.Username); err != nil {
+		if err := rows.Scan(&comment.ID, &comment.ImageID, &comment.UserID, &comment.Comment, &comment.CreatedAt, &comment.Username); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse image comments" + err.Error()})
 			return
 		}

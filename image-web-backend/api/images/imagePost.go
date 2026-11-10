@@ -1,7 +1,6 @@
 package images
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,17 +9,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jackc/pgx/v5"
+	storage_go "github.com/supabase-community/storage-go"
 )
 
 func (d *Database) UploadImage(c *gin.Context) {
-	file, err := c.FormFile("imageFile")
-	imageName := c.PostForm("imageName")
-
-	var user User
-
+	title := c.PostForm("imageName")
+	fileHeader, err := c.FormFile("imageFile")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No image uploaded"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing image file"})
 		return
 	}
 
@@ -36,57 +32,54 @@ func (d *Database) UploadImage(c *gin.Context) {
 		return
 	}
 
-	username := claims["username"].(string)
-
-	uploadDir := "./uploads/" + username + "/userImage"
-
-	if err := os.MkdirAll(uploadDir, 0755); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
-		return
-	}
-
-	ext := filepath.Ext(file.Filename)
-	uniqueFilename := fmt.Sprintf("%s-%d%s", username, time.Now().UnixNano(), ext)
-
-	dst := filepath.Join(uploadDir, uniqueFilename)
-
-	if err := c.SaveUploadedFile(file, dst); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save the image file"})
-		return
-	}
-
 	idFloat, ok := claims["id"].(float64)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID claim type"})
 		return
 	}
-	Id := int(idFloat)
+	userID := int(idFloat)
 
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT id FROM users WHERE id = $1", &Id).Scan(&user.Id)
+	file, err := fileHeader.Open()
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error":   "Rows not found",
-				"message": "User doesn't exist",
-			})
-			return
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open uploaded file"})
+		return
+	}
+	defer file.Close()
 
-		println("DB Query failed:", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+	ext := filepath.Ext(fileHeader.Filename)
+	fileName := fmt.Sprintf("%d_%s", time.Now().UnixNano(), ext)
+	contentType := fileHeader.Header.Get("Content-Type")
+
+	_, err = d.SupabaseClient.UploadFile(d.BucketName, fileName, file, storage_go.FileOptions{
+		ContentType: &contentType,
+		Upsert:      boolPtr(false),
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Supabase upload failed: %v", err)})
 		return
 	}
 
-	_, err = d.DB.Pool.Exec(c.Request.Context(), "INSERT INTO user_images (image_name, user_id, image_path, created_at) VALUES ($1, $2, $3, NOW())", imageName, Id, dst)
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	publicURL := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", supabaseURL, d.BucketName, fileName)
+
+	query := `INSERT INTO images (user_id, title, image_url, created_at) VALUES ($1, $2, $3, $4) RETURNING id`
+	var imageID int
+	createdAt := time.Now()
+
+	err = d.DB.Pool.QueryRow(c.Request.Context(), query, userID, title, publicURL, createdAt).Scan(&imageID)
 	if err != nil {
-		println("[Upload Error] DB Insert failed:", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image metadata"})
+		_, _ = d.SupabaseClient.RemoveFile(d.BucketName, []string{fileName})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image record to database"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":  "Image uploaded successfully",
-		"filename": uniqueFilename,
-		"path":     dst,
+		"message":   "Image uploaded successfully",
+		"image_id":  imageID,
+		"image_url": publicURL,
 	})
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

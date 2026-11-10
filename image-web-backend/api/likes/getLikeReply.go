@@ -47,9 +47,10 @@ func (d *Database) GetLikeReply(c *gin.Context) {
 	}
 
 	var likeCount int
+	// FIXED: Changed from likes_reply to the unified likes table
 	err = d.DB.Pool.QueryRow(
 		c.Request.Context(),
-		"SELECT COUNT(*) FROM likes_reply WHERE reply_id = $1",
+		"SELECT COUNT(*) FROM likes WHERE reply_id = $1",
 		replyId,
 	).Scan(&likeCount)
 	if err != nil {
@@ -58,9 +59,10 @@ func (d *Database) GetLikeReply(c *gin.Context) {
 	}
 
 	if userId > 0 {
+		// FIXED: Changed to unified likes table and added null checks for image_id and comment_id
 		err = d.DB.Pool.QueryRow(
 			c.Request.Context(),
-			"SELECT EXISTS(SELECT 1 FROM likes_reply WHERE user_id = $1 AND reply_id = $2)",
+			"SELECT EXISTS(SELECT 1 FROM likes WHERE user_id = $1 AND reply_id = $2 AND image_id IS NULL AND comment_id IS NULL)",
 			userId,
 			replyId,
 		).Scan(&isLiked)

@@ -1,25 +1,15 @@
 package comments
 
 import (
-	"errors"
 	"net/http"
-	"strconv"
+	"time" // 1. Import time package
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jackc/pgx/v5"
 )
 
 func (d *Database) PostComment(c *gin.Context) {
-	var comment Comments
-
-	paramsId := c.Param("id")
-	imageId, err := strconv.Atoi(paramsId)
-
-	if err := c.BindJSON(&comment); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
-		return
-	}
+	imageID := c.Param("id")
 
 	token, exists := c.Get("auth_token")
 	if !exists {
@@ -38,32 +28,29 @@ func (d *Database) PostComment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID claim type"})
 		return
 	}
-	Id := int(idFloat)
-	var id int
+	userID := int(idFloat)
 
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT id FROM users WHERE id = $1", &Id).Scan(&id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error":   "Rows not found",
-				"message": "User doesn't exist",
-			})
-			return
-		}
-
-		println("DB Query failed:", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+	var input struct {
+		Comment string `json:"comment"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	_, err = d.DB.Pool.Exec(c.Request.Context(), "INSERT INTO image_comments (image_id, user_id, comment, created_at) VALUES ($1, $2, $3, NOW())", imageId, id, comment.Comment)
+	query := `INSERT INTO comments (image_id, user_id, comment) VALUES ($1, $2, $3) RETURNING id, created_at`
+	var commentID int
+	var createdAt time.Time // 2. Changed from string to time.Time
+
+	err := d.DB.Pool.QueryRow(c.Request.Context(), query, imageID, userID, input.Comment).Scan(&commentID, &createdAt)
 	if err != nil {
-		println("[Upload Error] DB Insert failed:", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to comment on image"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to post comment"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Has successfully comment on image",
+		"message":    "Comment posted successfully",
+		"comment_id": commentID,
+		"created_at": createdAt, // Gin/json encoder will automatically format this as an ISO string
 	})
 }

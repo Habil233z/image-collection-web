@@ -16,7 +16,8 @@ func (d *Database) GetReplyCount(c *gin.Context) {
 	}
 
 	var count int
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT COUNT(*) FROM comment_replies WHERE comment_id = $1", commentId).Scan(&count)
+	// FIXED: Changed table name from comment_replies to replies
+	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT COUNT(*) FROM replies WHERE comment_id = $1", commentId).Scan(&count)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reply count"})
 		return

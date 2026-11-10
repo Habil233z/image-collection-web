@@ -127,12 +127,12 @@ export default function ImageDetail() {
             <main className="flex-1 w-full px-6 sm:px-12 flex flex-col items-center">
                 {imageDetail && (
                     <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-6 sm:p-8 w-full max-w-6xl border border-white/60 flex flex-col items-center mb-8">
-                        <h2 className="text-3xl sm:text-5xl font-bold text-center text-gray-900 mb-6">{imageDetail.image_name}</h2>
+                        <h2 className="text-3xl sm:text-5xl font-bold text-center text-gray-900 mb-6">{imageDetail.title}</h2>
                         <div className="w-full flex flex-col items-center">
                             <img 
-                                src={`http://localhost:8080/${imageDetail.image_path}`} 
+                                src={`${imageDetail.image_url}`} 
                                 className="max-h-150 w-auto rounded-2xl object-contain shadow-md mb-6" 
-                                alt={imageDetail.image_name}
+                                alt={imageDetail.title}
                             />  
                             {username === imageDetail.username ? (
                                 <div className="flex justify-between items-center w-full px-2 mt-2 text-gray-600 border-t border-gray-100 pt-4">

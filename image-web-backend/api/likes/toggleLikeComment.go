@@ -9,15 +9,15 @@ import (
 )
 
 func (d *Database) ToggleLikeComment(c *gin.Context) {
-	commentIdStr := c.Param("commentId")
-	commentId, err := strconv.Atoi(commentIdStr)
+	commentIDStr := c.Param("commentId")
+	commentID, err := strconv.Atoi(commentIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid comment ID"})
 		return
 	}
 
-	token, userExists := c.Get("auth_token")
-	if !userExists {
+	token, exists := c.Get("auth_token")
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: User data not found"})
 		return
 	}
@@ -33,27 +33,28 @@ func (d *Database) ToggleLikeComment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID claim type"})
 		return
 	}
-	userId := int(idFloat)
+	userID := int(idFloat)
 
-	var existsQuery bool
-	err = d.DB.Pool.QueryRow(c, "SELECT EXISTS(SELECT 1 FROM likes_comment WHERE user_id = $1 AND comment_id = $2)", userId, commentId).Scan(&existsQuery)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+	var existingID int
+	checkQuery := `SELECT id FROM likes WHERE user_id = $1 AND comment_id = $2 AND image_id IS NULL AND reply_id IS NULL`
+	err = d.DB.Pool.QueryRow(c.Request.Context(), checkQuery, userID, commentID).Scan(&existingID)
+
+	if err == nil {
+		_, err = d.DB.Pool.Exec(c.Request.Context(), `DELETE FROM likes WHERE id = $1`, existingID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlike comment"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Unliked comment successfully", "liked": false})
 		return
 	}
 
-	if existsQuery {
-		_, err = d.DB.Pool.Exec(c, "DELETE FROM likes_comment WHERE user_id = $1 AND comment_id = $2", userId, commentId)
-	} else {
-		_, err = d.DB.Pool.Exec(c, "INSERT INTO likes_comment (user_id, comment_id) VALUES ($1, $2)", userId, commentId)
-	}
-
-	var likeCount int
-	err = d.DB.Pool.QueryRow(c, "SELECT COUNT(*) FROM likes_comment WHERE comment_id = $1", commentId).Scan(&likeCount)
+	insertQuery := `INSERT INTO likes (user_id, comment_id) VALUES ($1, $2)`
+	_, err = d.DB.Pool.Exec(c.Request.Context(), insertQuery, userID, commentID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch like count"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like comment"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Liked successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Liked comment successfully", "liked": true})
 }

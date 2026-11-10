@@ -9,8 +9,8 @@ import (
 )
 
 func (d *Database) ToggleLikeReply(c *gin.Context) {
-	replyIdStr := c.Param("replyId")
-	replyId, err := strconv.Atoi(replyIdStr)
+	replyIDStr := c.Param("replyId")
+	replyID, err := strconv.Atoi(replyIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reply ID"})
 		return
@@ -33,38 +33,28 @@ func (d *Database) ToggleLikeReply(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID claim type"})
 		return
 	}
-	userId := int(idFloat)
+	userID := int(idFloat)
 
-	var existingId int
-	err = d.DB.Pool.QueryRow(
-		c.Request.Context(),
-		"SELECT id FROM likes_reply WHERE reply_id = $1 AND user_id = $2",
-		replyId, userId,
-	).Scan(&existingId)
+	var existingID int
+	checkQuery := `SELECT id FROM likes WHERE user_id = $1 AND reply_id = $2 AND image_id IS NULL AND comment_id IS NULL`
+	err = d.DB.Pool.QueryRow(c.Request.Context(), checkQuery, userID, replyID).Scan(&existingID)
 
 	if err == nil {
-		_, err = d.DB.Pool.Exec(
-			c.Request.Context(),
-			"DELETE FROM likes_reply WHERE reply_id = $1 AND user_id = $2",
-			replyId, userId,
-		)
+		_, err = d.DB.Pool.Exec(c.Request.Context(), `DELETE FROM likes WHERE id = $1`, existingID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlike reply"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"message": "Reply unliked successfully", "liked": false})
+		c.JSON(http.StatusOK, gin.H{"message": "Unliked reply successfully", "liked": false})
 		return
 	}
 
-	_, err = d.DB.Pool.Exec(
-		c.Request.Context(),
-		"INSERT INTO likes_reply (reply_id, user_id, created_at) VALUES ($1, $2, NOW())",
-		replyId, userId,
-	)
+	insertQuery := `INSERT INTO likes (user_id, reply_id) VALUES ($1, $2)`
+	_, err = d.DB.Pool.Exec(c.Request.Context(), insertQuery, userID, replyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like reply"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Reply liked successfully", "liked": true})
+	c.JSON(http.StatusOK, gin.H{"message": "Liked reply successfully", "liked": true})
 }

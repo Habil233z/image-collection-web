@@ -8,10 +8,12 @@ import (
 	"image-web-backend/api/replys"
 
 	"log"
+	"os"
 	"time"
 
 	"image-web-backend/resources/database"
 	"image-web-backend/resources/middleware/authMiddleware"
+	"image-web-backend/resources/supabase" // Import your new supabase package
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -29,22 +31,39 @@ func main() {
 	}
 	defer db.Pool.Close()
 
+	// Initialize Supabase Storage Client
+	supabaseClient := supabase.NewStorageClient()
+	bucketName := os.Getenv("SUPABASE_BUCKET_NAME")
+	if bucketName == "" {
+		bucketName = "images" // fallback bucket name
+	}
+
 	authHandlers := &auth.Database{DB: db}
-	imageHandlers := &images.Database{DB: db}
+
+	// Inject Supabase client and bucket name into image handlers
+	imageHandlers := &images.Database{
+		DB:             db,
+		SupabaseClient: supabaseClient,
+		BucketName:     bucketName,
+	}
+
 	commentHandlers := &comments.Database{DB: db}
 	likeHandlers := &likes.Database{DB: db}
 	replyHandlers := &replys.Database{DB: db}
 
 	router := gin.Default()
-	router.Static("/uploads", "./uploads")
+
+	// REMOVED: router.Static("/uploads", "./uploads") -> No longer needed as images are stored in Supabase
+
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "content-type"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // Fixed capitalization for Content-Type
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) bool {
-			return origin == "https://github.com"
+			// FIXED: Allow your frontend development server URL
+			return origin == "http://localhost:3000"
 		},
 		MaxAge: 12 * time.Hour,
 	}))
