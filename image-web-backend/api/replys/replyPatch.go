@@ -48,7 +48,8 @@ func (d *Database) EditReply(c *gin.Context) {
 	userId := int(idFloat)
 
 	var ownerId int
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id FROM comment_replies WHERE id = $1", replyId).Scan(&ownerId)
+	// FIXED: Changed table name from comment_replies to replies
+	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id FROM replies WHERE id = $1", replyId).Scan(&ownerId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Reply not found"})
@@ -63,7 +64,8 @@ func (d *Database) EditReply(c *gin.Context) {
 		return
 	}
 
-	_, err = d.DB.Pool.Exec(c.Request.Context(), "UPDATE comment_replies SET reply = $1 WHERE id = $2", input.EditReplyText, replyId)
+	// FIXED: Changed table name from comment_replies to replies
+	_, err = d.DB.Pool.Exec(c.Request.Context(), "UPDATE replies SET reply = $1 WHERE id = $2", input.EditReplyText, replyId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update reply in database"})
 		return

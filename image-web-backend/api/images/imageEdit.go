@@ -1,24 +1,22 @@
 package images
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jackc/pgx/v5"
+	storage_go "github.com/supabase-community/storage-go"
 )
 
 func (d *Database) EditImage(c *gin.Context) {
-	paramsId := c.Param("id")
-	imageId, err := strconv.Atoi(paramsId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	imageID := c.Param("id")
+	if imageID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Image ID is required"})
 		return
 	}
 
@@ -39,59 +37,68 @@ func (d *Database) EditImage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID claim type"})
 		return
 	}
-	userId := int(idFloat)
-	username := claims["username"].(string)
+	userID := int(idFloat)
 
-	var currentImagePath string
-	var creatorId int
-
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id, image_path FROM user_images WHERE id = $1", imageId).Scan(&creatorId, &currentImagePath)
+	var existingURL string
+	var ownerID int
+	err := d.DB.Pool.QueryRow(c.Request.Context(), `SELECT user_id, image_url FROM images WHERE id = $1`, imageID).Scan(&ownerID, &existingURL)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
 		return
 	}
 
-	if creatorId != userId {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: You do not have permission to edit this image"})
+	if ownerID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Permission denied"})
 		return
 	}
 
-	imageName := c.PostForm("image_name")
-	file, fileErr := c.FormFile("imageFile")
+	title := c.PostForm("title")
+	newURL := existingURL
 
-	newImagePath := currentImagePath
+	// FIXED: Look for "imageFile" to match frontend FormData
+	fileHeader, err := c.FormFile("imageFile")
+	if err == nil {
+		file, err := fileHeader.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open new image file"})
+			return
+		}
+		defer file.Close()
 
-	if fileErr == nil {
-		uploadDir := "./uploads/" + username + "/userImage"
-		if err := os.MkdirAll(uploadDir, 0755); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
+		ext := filepath.Ext(fileHeader.Filename)
+		newFileName := fmt.Sprintf("%d_%s", timeNano(), ext)
+		contentType := fileHeader.Header.Get("Content-Type")
+
+		_, err = d.SupabaseClient.UploadFile(d.BucketName, newFileName, file, storage_go.FileOptions{
+			ContentType: &contentType,
+			Upsert:      boolPtr(false),
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload new image to Supabase"})
 			return
 		}
 
-		ext := filepath.Ext(file.Filename)
-		uniqueFilename := fmt.Sprintf("%s-%d%s", username, time.Now().UnixNano(), ext)
-		newImagePath = filepath.Join(uploadDir, uniqueFilename)
+		supabaseURL := os.Getenv("SUPABASE_URL")
+		newURL = fmt.Sprintf("%s/storage/v1/object/public/%s/%s", supabaseURL, d.BucketName, newFileName)
 
-		if err := c.SaveUploadedFile(file, newImagePath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save the new image file"})
-			return
-		}
-		_ = os.Remove(currentImagePath)
+		oldParts := strings.Split(existingURL, "/")
+		oldFileName := oldParts[len(oldParts)-1]
+		_, _ = d.SupabaseClient.RemoveFile(d.BucketName, []string{oldFileName})
 	}
 
-	_, err = d.DB.Pool.Exec(c.Request.Context(), `UPDATE user_images SET image_name = $1, image_path = $2 WHERE id = $3`, imageName, newImagePath, imageId)
+	queryUpdate := `UPDATE images SET title = COALESCE(NULLIF($1, ''), title), image_url = $2, updated_at = NOW() WHERE id = $3`
+	_, err = d.DB.Pool.Exec(c.Request.Context(), queryUpdate, title, newURL, imageID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update image"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update image record in database"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":  true,
-		"message":  "Image updated successfully",
-		"new_path": newImagePath,
+		"message":   "Image updated successfully",
+		"image_url": newURL,
 	})
+}
+
+func timeNano() int64 {
+	return time.Now().UnixNano()
 }

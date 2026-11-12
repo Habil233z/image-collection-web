@@ -1,21 +1,17 @@
 package images
 
 import (
-	"errors"
 	"net/http"
-	"os"
-	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jackc/pgx/v5"
 )
 
 func (d *Database) DeleteImage(c *gin.Context) {
-	paramsId := c.Param("id")
-	imageID, err := strconv.Atoi(paramsId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+	imageID := c.Param("id")
+	if imageID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Image ID is required"})
 		return
 	}
 
@@ -38,34 +34,33 @@ func (d *Database) DeleteImage(c *gin.Context) {
 	}
 	userID := int(idFloat)
 
+	var imageURL string
 	var ownerID int
-	var imagePath string
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id, image_path FROM user_images WHERE id = $1", imageID).Scan(&ownerID, &imagePath)
+	querySelect := `SELECT user_id, image_url FROM images WHERE id = $1`
+	err := d.DB.Pool.QueryRow(c.Request.Context(), querySelect, imageID).Scan(&ownerID, &imageURL)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
 		return
 	}
+
 	if ownerID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: You do not own this image"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "Permission denied"})
 		return
 	}
 
-	_, err = d.DB.Pool.Exec(c.Request.Context(), "DELETE FROM user_images WHERE id = $1", imageID)
+	parts := strings.Split(imageURL, "/")
+	fileName := parts[len(parts)-1]
+
+	_, _ = d.SupabaseClient.RemoveFile(d.BucketName, []string{fileName})
+
+	queryDelete := `DELETE FROM images WHERE id = $1`
+	_, err = d.DB.Pool.Exec(c.Request.Context(), queryDelete, imageID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete image record from database"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete image from database"})
 		return
-	}
-
-	if imagePath != "" {
-		_ = os.Remove(imagePath)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Image deleted successfully",
+		"message": "Image successfully deleted from Supabase and database",
 	})
 }

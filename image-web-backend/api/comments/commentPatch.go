@@ -48,7 +48,8 @@ func (d *Database) EditComment(c *gin.Context) {
 	userId := int(idFloat)
 
 	var ownerId int
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id FROM image_comments WHERE id = $1", commentId).Scan(&ownerId)
+	// FIXED: Changed table name from image_comments to comments
+	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id FROM comments WHERE id = $1", commentId).Scan(&ownerId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Comment not found"})
@@ -63,7 +64,8 @@ func (d *Database) EditComment(c *gin.Context) {
 		return
 	}
 
-	_, err = d.DB.Pool.Exec(c.Request.Context(), "UPDATE image_comments SET comment = $1 WHERE id = $2", input.EditCommentText, commentId)
+	// FIXED: Changed table name from image_comments to comments and updated the timestamp column as well
+	_, err = d.DB.Pool.Exec(c.Request.Context(), "UPDATE comments SET comment = $1, updated_at = NOW() WHERE id = $2", input.EditCommentText, commentId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update comment in database"})
 		return

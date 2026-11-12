@@ -87,7 +87,6 @@ export default function Comments({
         }
         try {
             await api.delete(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}`);
-            setComments([]);
             getComments(page);
         } catch (error) {
             console.log(error);

@@ -45,14 +45,16 @@ func (d *Database) GetLikeComment(c *gin.Context) {
 	}
 
 	var isLiked bool
-	err = d.DB.Pool.QueryRow(c, "SELECT EXISTS(SELECT 1 FROM likes_comment WHERE user_id = $1 AND comment_id = $2)", userId, commentId).Scan(&isLiked)
+	// Updated from likes_comment to unified likes table
+	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT EXISTS(SELECT 1 FROM likes WHERE user_id = $1 AND comment_id = $2)", userId, commentId).Scan(&isLiked)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
 
 	var count int
-	err = d.DB.Pool.QueryRow(c, "SELECT COUNT(*) FROM likes_comment WHERE comment_id = $1", commentId).Scan(&count)
+	// Updated from likes_comment to unified likes table
+	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT COUNT(*) FROM likes WHERE comment_id = $1", commentId).Scan(&count)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch like count"})
 		return

@@ -47,16 +47,18 @@ func (d *Database) GetLikeImage(c *gin.Context) {
 	}
 
 	var count int
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT COUNT(*) FROM likes_image WHERE image_id = $1", imageId).Scan(&count)
+	// FIXED: Changed from likes_image to unified likes table
+	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT COUNT(*) FROM likes WHERE image_id = $1", imageId).Scan(&count)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch count"})
 		return
 	}
 
 	if userId > 0 {
+		// FIXED: Changed to unified likes table and added checks to ensure it's specifically an image like
 		err = d.DB.Pool.QueryRow(
 			c.Request.Context(),
-			"SELECT EXISTS(SELECT 1 FROM likes_image WHERE user_id = $1 AND image_id = $2)",
+			"SELECT EXISTS(SELECT 1 FROM likes WHERE user_id = $1 AND image_id = $2 AND comment_id IS NULL AND reply_id IS NULL)",
 			userId,
 			imageId,
 		).Scan(&isLiked)

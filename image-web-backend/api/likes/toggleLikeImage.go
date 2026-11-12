@@ -9,11 +9,15 @@ import (
 )
 
 func (d *Database) ToggleLike(c *gin.Context) {
-	paramsId := c.Param("id")
-	imageId, err := strconv.Atoi(paramsId)
+	imageIDStr := c.Param("id")
+	imageID, err := strconv.Atoi(imageIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image ID"})
+		return
+	}
 
-	token, userExists := c.Get("auth_token")
-	if !userExists {
+	token, exists := c.Get("auth_token")
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: User data not found"})
 		return
 	}
@@ -29,28 +33,31 @@ func (d *Database) ToggleLike(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID claim type"})
 		return
 	}
-	userId := int(idFloat)
+	userID := int(idFloat)
 
-	var exists bool
-	err = d.DB.Pool.QueryRow(c, "SELECT EXISTS(SELECT 1 FROM likes_image WHERE user_id = $1 AND image_id = $2)", &userId, &imageId).Scan(&exists)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query error"})
-		return
-	}
+	// Check if already liked
+	var existingID int
+	checkQuery := `SELECT id FROM likes WHERE user_id = $1 AND image_id = $2 AND comment_id IS NULL AND reply_id IS NULL`
+	err = d.DB.Pool.QueryRow(c.Request.Context(), checkQuery, userID, imageID).Scan(&existingID)
 
-	if exists {
-		_, err = d.DB.Pool.Exec(c.Request.Context(), "DELETE FROM likes_image WHERE user_id = $1 AND image_id = $2", userId, imageId)
+	if err == nil {
+		// Unlike
+		_, err = d.DB.Pool.Exec(c.Request.Context(), `DELETE FROM likes WHERE id = $1`, existingID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlike image"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"message": "Unliked successfully", "isLiked": false})
-	} else {
-		_, err = d.DB.Pool.Exec(c.Request.Context(), "INSERT INTO likes_image (user_id, image_id) VALUES ($1, $2)", userId, imageId)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like image"})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"message": "Liked successfully", "isLiked": true})
+		c.JSON(http.StatusOK, gin.H{"message": "Unliked successfully", "liked": false})
+		return
 	}
+
+	// Like
+	insertQuery := `INSERT INTO likes (user_id, image_id) VALUES ($1, $2)`
+	_, err = d.DB.Pool.Exec(c.Request.Context(), insertQuery, userID, imageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like image"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Liked successfully", "liked": true})
 }

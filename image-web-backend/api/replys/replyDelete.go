@@ -38,7 +38,7 @@ func (d *Database) DeleteReply(c *gin.Context) {
 	userId := int(idFloat)
 	var userid int
 
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT id FROM users WHERE id = $1", &userId).Scan(&userid)
+	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT id FROM users WHERE id = $1", userId).Scan(&userid)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -53,7 +53,8 @@ func (d *Database) DeleteReply(c *gin.Context) {
 	}
 
 	var replierId int
-	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id FROM comment_replies WHERE id = $1", &replyId).Scan(&replierId)
+	// FIXED: Changed table name from comment_replies to replies
+	err = d.DB.Pool.QueryRow(c.Request.Context(), "SELECT user_id FROM replies WHERE id = $1", replyId).Scan(&replierId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -73,7 +74,8 @@ func (d *Database) DeleteReply(c *gin.Context) {
 		return
 	}
 
-	_, err = d.DB.Pool.Exec(c.Request.Context(), "DELETE FROM comment_replies WHERE id = $1", &replyId)
+	// FIXED: Changed table name from comment_replies to replies
+	_, err = d.DB.Pool.Exec(c.Request.Context(), "DELETE FROM replies WHERE id = $1", replyId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete this reply from database"})
 		return

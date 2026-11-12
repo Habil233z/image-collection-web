@@ -23,8 +23,8 @@ export default function EditImage() {
             const response = await api.get(`http://localhost:8080/image/${targetId}`)
             const data = response.data.data
             
-            setImageName(data.image_name)
-            setCurrentImagePath(data.image_path)
+            setImageName(data.title)
+            setCurrentImagePath(data.image_url) // FIXED: Changed from image_path to image_url
             
             const storedUser = localStorage.getItem("username")
             if (storedUser !== data.username) {
@@ -46,7 +46,7 @@ export default function EditImage() {
     const handleSubmit = async (e: any) => {
         e.preventDefault()
         const formData = new FormData()
-        formData.append("image_name", imageName)
+        formData.append("title", imageName)
         if (imageFile) {
             formData.append("imageFile", imageFile)
         }
@@ -64,7 +64,7 @@ export default function EditImage() {
         if (id) {
             getImageDetail(id)
         }
-    }, []);
+    }, [id]);
 
     return (
         <div className="min-h-screen w-screen bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col pb-12">
@@ -93,7 +93,7 @@ export default function EditImage() {
                                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 self-start">Image (Click to change)</label>
                                 <label className="cursor-pointer w-full flex flex-col items-center justify-center border-2 border-dashed border-sky-300 rounded-2xl bg-sky-50/50 hover:bg-sky-50 p-4 transition group">
                                     <img 
-                                        src={previewUrl || `http://localhost:8080/${currentImagePath}`} 
+                                        src={previewUrl || `${currentImagePath}`} 
                                         className="max-h-72 w-auto object-contain rounded-xl shadow-xs group-hover:scale-[1.02] transition" 
                                         alt="Preview"
                                     />

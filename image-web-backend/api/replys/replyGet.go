@@ -17,21 +17,21 @@ func (d *Database) GetReplies(c *gin.Context) {
 
 	query := `
 		SELECT 
-		comment_replies.id, 
-		comment_replies.comment_id, 
-		comment_replies.user_id, 
+		replies.id, 
+		replies.comment_id, 
+		replies.user_id, 
 		users.username, 
-		comment_replies.reply, 
-		comment_replies.created_at
+		replies.reply, 
+		replies.created_at
 
-		FROM comment_replies
-		JOIN users ON comment_replies.user_id = users.id
-		WHERE comment_replies.comment_id = $1
-		ORDER BY comment_replies.created_at ASC
+		FROM replies
+		JOIN users ON replies.user_id = users.id
+		WHERE replies.comment_id = $1
+		ORDER BY replies.created_at ASC
 	`
 	rows, err := d.DB.Pool.Query(c.Request.Context(), query, commentId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch replies area 1" + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch replies: " + err.Error()})
 		return
 	}
 	defer rows.Close()
@@ -40,7 +40,7 @@ func (d *Database) GetReplies(c *gin.Context) {
 	for rows.Next() {
 		var reply ReplyResponse
 		if err := rows.Scan(&reply.Id, &reply.CommentId, &reply.UserId, &reply.Username, &reply.Reply, &reply.CreatedAt); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse replies area 2"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse replies: " + err.Error()})
 			return
 		}
 		replies = append(replies, reply)

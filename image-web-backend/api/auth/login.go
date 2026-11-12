@@ -19,7 +19,7 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	err := d.DB.Pool.QueryRow(c.Request.Context(), "SELECT id, email, username, password FROM users WHERE username = $1 OR email = $1", input.EmailOrUsername).Scan(&user.Id, &user.Email, &user.Username, &user.Password)
+	err := d.DB.Pool.QueryRow(c.Request.Context(), "SELECT id, email, username, password FROM users WHERE username = $1 OR email = $1", input.EmailOrUsername).Scan(&user.ID, &user.Email, &user.Username, &user.Password)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -37,7 +37,7 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := CreateToken(user.Id, user.Email, user.Username)
+	token, err := CreateToken(user.ID, user.Email, user.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"})
 		return

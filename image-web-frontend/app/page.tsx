@@ -83,7 +83,7 @@ export default function Home() {
               <Link key={image.id} href={`/image/${image.id}`}>
                   <div className="overflow-hidden bg-gray-100 hover:scale-105 duration-300">
                     <img 
-                      src={`http://localhost:8080/${image.image_path}`} 
+                      src={`${image.image_url}`} 
                       alt={image.image_name} 
                       className="w-full h-auto object-cover"
                     />

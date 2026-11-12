@@ -10,10 +10,10 @@ type Database struct {
 }
 
 type Comments struct {
-	Id         int       `json:"id"`
-	Image_id   string    `json:"image_name"`
-	User_id    string    `json:"user_id"`
-	Comment    string    `json:"comment"`
-	Created_at time.Time `json:"created_at"`
-	Username   string    `json:"username"`
+	ID        int       `json:"id" db:"id"`
+	ImageID   int       `json:"image_id" db:"image_id"`
+	UserID    int       `json:"user_id" db:"user_id"`
+	Comment   string    `json:"comment" db:"comment"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	Username  string    `json:"username"`
 }
