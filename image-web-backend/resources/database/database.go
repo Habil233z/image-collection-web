@@ -3,7 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -14,7 +16,6 @@ type Postgres struct {
 }
 
 func Database() (*Postgres, error) {
-	// Read DB_URL from .env (fallback to DATABASE_URL if needed)
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {
 		dbURL = os.Getenv("DATABASE_URL")
@@ -24,25 +25,31 @@ func Database() (*Postgres, error) {
 		return nil, fmt.Errorf("DB_URL or DATABASE_URL environment variable is not set")
 	}
 
-	// Read Supabase Bucket Name from environment
 	bucketName := os.Getenv("SUPABASE_BUCKET_NAME")
 	if bucketName == "" {
-		bucketName = "images" // Default fallback bucket name
+		bucketName = "images"
 	}
 
-	// Parse configuration for pgx pool
 	config, err := pgxpool.ParseConfig(dbURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse database config: %w", err)
 	}
 
-	// Connect to the database
+	// FORCE IPv4: Override the dial function to strictly use tcp4, bypassing IPv6 assignment errors
+	config.ConnConfig.DialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		d := net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}
+		// Force "tcp4" instead of whatever network pgx resolves by default
+		return d.DialContext(ctx, "tcp4", addr)
+	}
+
 	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Ping the database to verify the connection
 	if err := pool.Ping(context.Background()); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
