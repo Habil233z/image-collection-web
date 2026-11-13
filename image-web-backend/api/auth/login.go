@@ -24,11 +24,15 @@ func (d *Database) Login(c *gin.Context) {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error":   "Rows not found",
-				"message": "User didn't exitst",
+				"message": "User doesn't exist",
 			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+
+		// PRINT THE EXACT ERROR IN YOUR TERMINAL
+		println("[Login Error] DB Query failed:", err.Error())
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error: " + err.Error()})
 		return
 	}
 
