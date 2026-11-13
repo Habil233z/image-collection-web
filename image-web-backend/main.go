@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net"
 	"os"
 	"time"
 
@@ -27,6 +28,8 @@ var router *gin.Engine
 var ginLambda *ginadapter.GinLambda
 
 func init() {
+	net.DefaultResolver.PreferGo = true
+
 	if os.Getenv("GIN_MODE") == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
