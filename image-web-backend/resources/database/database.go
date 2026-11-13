@@ -3,10 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
-	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -35,15 +34,8 @@ func Database() (*Postgres, error) {
 		return nil, fmt.Errorf("failed to parse database config: %w", err)
 	}
 
-	// FORCE IPv4: Override the dial function to strictly use tcp4, bypassing IPv6 assignment errors
-	config.ConnConfig.DialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
-		d := net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}
-		// Force "tcp4" instead of whatever network pgx resolves by default
-		return d.DialContext(ctx, "tcp4", addr)
-	}
+	// CORRECT PGX/V5 SETTING: Disables prepared statements for Supabase transaction pooler (port 6543)
+	config.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 
 	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
