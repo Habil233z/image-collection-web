@@ -4,10 +4,6 @@
     {
       "src": "image-web-backend/main.go",
       "use": "@vercel/go"
-    },
-    {
-      "src": "image-web-frontend/package.json",
-      "use": "@vercel/next"
     }
   ],
   "routes": [
