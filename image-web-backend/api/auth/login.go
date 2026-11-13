@@ -47,10 +47,18 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	c.SetSameSite(http.SameSiteLaxMode)
+	// Determine if we are in production (release mode)
+	isRelease := os.Getenv("GIN_MODE") == "release"
+
+	// In production (Vercel / HTTPS), SameSiteNoneMode allows cross-site cookies.
+	// Locally (HTTP localhost), SameSiteLaxMode is required because browsers reject SameSite=None without Secure.
+	if isRelease {
+		c.SetSameSite(http.SameSiteNoneMode)
+	} else {
+		c.SetSameSite(http.SameSiteLaxMode)
+	}
 
 	maxAge := 2 * 60 * 60
-	isSecure := os.Getenv("GIN_MODE") == "release"
 
 	c.SetCookie(
 		"image-web-auth_token",
@@ -58,8 +66,8 @@ func (d *Database) Login(c *gin.Context) {
 		maxAge,
 		"/",
 		"",
-		isSecure,
-		true,
+		isRelease, // Secure: true in production (HTTPS), false locally (HTTP)
+		true,      // HttpOnly
 	)
 
 	c.JSON(http.StatusOK, gin.H{
