@@ -50,25 +50,27 @@ func (d *Database) Login(c *gin.Context) {
 	// Determine if we are in production (release mode)
 	isRelease := os.Getenv("GIN_MODE") == "release"
 
-	// In production (Vercel / HTTPS), SameSiteNoneMode allows cross-site cookies.
-	// Locally (HTTP localhost), SameSiteLaxMode is required because browsers reject SameSite=None without Secure.
+	// Set SameSite=None and Secure=true for cross-site production, Lax for local dev
+	sameSite := http.SameSiteLaxMode
 	if isRelease {
-		c.SetSameSite(http.SameSiteNoneMode)
-	} else {
-		c.SetSameSite(http.SameSiteLaxMode)
+		sameSite = http.SameSiteNoneMode
 	}
 
-	maxAge := 2 * 60 * 60
+	maxAge := 2 * 60 * 60 // 2 hours
 
-	c.SetCookie(
-		"image-web-auth_token",
-		token,
-		maxAge,
-		"/",
-		"",
-		isRelease, // Secure: true in production (HTTPS), false locally (HTTP)
-		true,      // HttpOnly
-	)
+	// Construct native http.Cookie with Partitioned enabled (CHIPS)
+	authCookie := &http.Cookie{
+		Name:        "image-web-auth_token",
+		Value:       token,
+		Path:        "/",
+		MaxAge:      maxAge,
+		Secure:      isRelease, // Must be true in production when using SameSite=None
+		HttpOnly:    true,      // Prevents JavaScript access
+		SameSite:    sameSite,  // NoneMode in production, LaxMode locally
+		Partitioned: true,      // Isolates the cookie per top-level site context
+	}
+
+	http.SetCookie(c.Writer, authCookie)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login Success",
