@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -23,6 +22,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Package-level variables accessible by both init() and main()
+var router *gin.Engine
 var ginLambda *ginadapter.GinLambda
 
 func init() {
@@ -52,7 +53,7 @@ func init() {
 	likeHandlers := &likes.Database{DB: db}
 	replyHandlers := &replys.Database{DB: db}
 
-	router := gin.Default()
+	router = gin.Default()
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "https://your-frontend-domain.vercel.app"},
@@ -101,7 +102,7 @@ func init() {
 		api.POST("/image/:id/comment/:commentId/reply/:replyId/like", likeHandlers.ToggleLikeReply)
 	}
 
-	// Initialize the adapter wrapper
+	// Initialize the adapter wrapper for Vercel
 	ginLambda = ginadapter.New(router)
 }
 
@@ -111,17 +112,20 @@ func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.API
 }
 
 func main() {
-	if os.Getenv("VERCEL") != "1" {
-		port := os.Getenv("PORT")
-		if port == "" {
-			port = "8080"
-		}
-		log.Printf("Listening and serving HTTP on localhost:%s", port)
-		if err := http.ListenAndServe(":"+port, nil); err != nil {
-			log.Fatalf("Server failed: %v", err)
-		}
-	} else {
-		// Pass the proper Handler function signature to lambda.Start
+	// If running inside Vercel environment, start Lambda handler
+	if os.Getenv("AWS_LAMBDA_RUNTIME_API") != "" || os.Getenv("VERCEL") == "1" {
 		lambda.Start(Handler)
+		return
+	}
+
+	// Otherwise, run as a local long-running HTTP server for development
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Listening and serving HTTP on localhost:%s", port)
+	if err := router.Run(":" + port); err != nil {
+		log.Fatalf("Server failed: %v", err)
 	}
 }
