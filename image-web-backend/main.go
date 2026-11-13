@@ -62,7 +62,7 @@ func main() {
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) bool {
-			// FIXED: Allow your frontend development server URL
+			// FIXED: Allow your frontend development server URL test
 			return origin == "http://localhost:3000"
 		},
 		MaxAge: 12 * time.Hour,
