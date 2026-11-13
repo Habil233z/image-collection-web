@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "image-web-backend/main.go",
+      "use": "@vercel/go"
+    },
+    {
+      "src": "image-web-frontend/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/login/?",
+      "dest": "/image-web-backend/main.go"
+    },
+    {
+      "src": "/register/?",
+      "dest": "/image-web-backend/main.go"
+    },
+    {
+      "src": "/logout/?",
+      "dest": "/image-web-backend/main.go"
+    },
+    {
+      "src": "/images/?",
+      "dest": "/image-web-backend/main.go"
+    },
+    {
+      "src": "/image/(.*)",
+      "dest": "/image-web-backend/main.go"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/image-web-backend/main.go"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/image-web-frontend/$1"
+    }
+  ]
+}
