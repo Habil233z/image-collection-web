@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 	"os"
 	"time"
@@ -15,15 +14,11 @@ import (
 	"image-web-backend/resources/middleware/authMiddleware"
 	"image-web-backend/resources/supabase"
 
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-var ginLambda *ginadapter.GinLambda
-var localRouter *gin.Engine
+var router *gin.Engine
 
 func init() {
 	if os.Getenv("GIN_MODE") == "release" {
@@ -52,7 +47,7 @@ func init() {
 	likeHandlers := &likes.Database{DB: db}
 	replyHandlers := &replys.Database{DB: db}
 
-	router := gin.Default()
+	router = gin.Default()
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "https://your-frontend-domain.vercel.app"},
@@ -100,33 +95,16 @@ func init() {
 		api.DELETE("/image/:id/comment/:commentId/reply/:replyId", replyHandlers.DeleteReply)
 		api.POST("/image/:id/comment/:commentId/reply/:replyId/like", likeHandlers.ToggleLikeReply)
 	}
-
-	// Keep a reference for local testing
-	localRouter = router
-
-	// Initialize the Vercel/Lambda adapter wrapper
-	ginLambda = ginadapter.New(router)
-}
-
-// Handler maps Vercel serverless request events into Gin context
-func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	return ginLambda.ProxyWithContext(ctx, req)
 }
 
 func main() {
-	// If running on Vercel, use Lambda handler execution loop
-	if os.Getenv("VERCEL") == "1" || os.Getenv("AWS_LAMBDA_RUNTIME_API") != "" {
-		lambda.Start(Handler)
-		return
-	}
-
-	// Local development fallback server
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
+
 	log.Printf("Listening and serving HTTP on localhost:%s", port)
-	if err := localRouter.Run(":" + port); err != nil {
+	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }
