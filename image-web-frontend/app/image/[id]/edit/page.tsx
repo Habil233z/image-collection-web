@@ -20,7 +20,7 @@ export default function EditImage() {
 
     async function getImageDetail(targetId: any) {
         try {
-            const response = await api.get(`http://localhost:8080/image/${targetId}`)
+            const response = await api.get(`image/${targetId}`)
             const data = response.data.data
             
             setImageName(data.title)
@@ -51,7 +51,7 @@ export default function EditImage() {
             formData.append("imageFile", imageFile)
         }
         try {
-            await api.patch(`http://localhost:8080/api/image/${id}`, formData)
+            await api.patch(`api/image/${id}`, formData)
             router.push(`/image/${id}`)
         } catch (err: any) {
             console.error("Error updating image:", err)

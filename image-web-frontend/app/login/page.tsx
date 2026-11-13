@@ -15,7 +15,7 @@ export default function Login() {
     async function clickLogin(e: React.FormEvent) {
         e.preventDefault()
         try {
-            const response = await api.post("http://localhost:8080/login", { emailOrUsername, password })
+            const response = await api.post("login", { emailOrUsername, password })
             localStorage.setItem("username", response.data.data)
             router.push("/")
         } catch (err) {

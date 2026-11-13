@@ -13,7 +13,7 @@ export default function Profile() {
 
     async function getProfile() {
         try {
-            const response = await api.get("http://localhost:8080/api/profile")
+            const response = await api.get("api/profile")
             setUsername(response.data.data.username)
             localStorage.setItem("username", response.data.data.username)
             setEmail(response.data.data.email)

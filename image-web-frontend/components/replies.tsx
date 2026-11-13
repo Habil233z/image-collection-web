@@ -40,7 +40,7 @@ export default function Replies({
 
     async function getReplyLike() {
         try {
-            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentId}/replies/${replyItem.id}/likes`);
+            const response = await api.get(`image/${imageId}/comment/${commentId}/replies/${replyItem.id}/likes`);
             setLikedReply(response.data.isLiked);
             setLikeReplyCount(response.data.likeCount);
         } catch (error) {
@@ -50,7 +50,7 @@ export default function Replies({
 
     async function handleLikeReply() {
         try {
-            await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentId}/reply/${replyItem.id}/like`);
+            await api.post(`api/image/${imageId}/comment/${commentId}/reply/${replyItem.id}/like`);
             getReplyLike();
         } catch (error) {
             console.log(error);
@@ -60,7 +60,7 @@ export default function Replies({
     async function editReply() {
         try {
             if (!editReplyText.trim()) return;
-            await api.patch(`http://localhost:8080/api/image/${imageId}/comment/${commentId}/reply/${replyItem.id}`, { editReplyText });
+            await api.patch(`api/image/${imageId}/comment/${commentId}/reply/${replyItem.id}`, { editReplyText });
             alert("Reply has been edited");
             setIsEditReplyDialogOpen(false);
             getReply();
@@ -74,7 +74,7 @@ export default function Replies({
             return;
         }
         try {
-            await api.delete(`http://localhost:8080/api/image/${imageId}/comment/${commentId}/reply/${replyItem.id}`);
+            await api.delete(`api/image/${imageId}/comment/${commentId}/reply/${replyItem.id}`);
             getReply();
         } catch (error) {
             console.log(error);

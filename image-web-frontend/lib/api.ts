@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://localhost:8080",
+    baseURL: "https://image-collection-web.vercel.app/",
     timeout: 10000,
     withCredentials: true,
     headers: {

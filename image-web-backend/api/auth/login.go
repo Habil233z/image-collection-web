@@ -53,7 +53,7 @@ func (d *Database) Login(c *gin.Context) {
 		token,
 		maxAge,
 		"/",
-		"localhost",
+		"",
 		isSecure,
 		true,
 	)

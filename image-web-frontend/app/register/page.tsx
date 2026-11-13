@@ -20,7 +20,7 @@ export default function Register() {
             return alert("Please ensure email is valid, username is at least 5 characters, and password is at least 8 characters.")
         } else {
             try {
-                const response = await api.post("http://localhost:8080/register", { email, username, password })
+                const response = await api.post("register", { email, username, password })
                 localStorage.setItem("username", response.data.data)
                 router.push("/")
             } catch {

@@ -35,7 +35,7 @@ export default function ImageDetail() {
 
     async function getImageDetail() {
         try {
-            const response = await api.get(`http://localhost:8080/image/${id}`);
+            const response = await api.get(`image/${id}`);
             setImageDetail(response.data.data);
         } catch (error) {
             console.log("Error fetching image detail:", error)
@@ -47,7 +47,7 @@ export default function ImageDetail() {
             return
         }
         try {
-            await api.delete(`http://localhost:8080/api/image/${id}`)
+            await api.delete(`api/image/${id}`)
             router.push("/")
         } catch (error: any) {
             console.error("Error deleting image:", error)
@@ -57,7 +57,7 @@ export default function ImageDetail() {
 
     async function getLikes() {
         try {
-            const response = await api.get(`http://localhost:8080/image/${id}/likes`)
+            const response = await api.get(`image/${id}/likes`)
             if (response.data.isLiked) {
                 setLiked(true)
             }
@@ -70,7 +70,7 @@ export default function ImageDetail() {
     async function handleLike() {
         try {
             setLiked(!liked)
-            await api.post(`http://localhost:8080/api/image/${id}/like`)
+            await api.post(`api/image/${id}/like`)
             getLikes()
         } catch (error) {
             console.log(error)
@@ -84,7 +84,7 @@ export default function ImageDetail() {
                 inputEl?.reportValidity()
                 return
             }
-            await api.post(`http://localhost:8080/api/image/${id}/comments`, { comment })
+            await api.post(`api/image/${id}/comments`, { comment })
             setComment("")
             getComments(page)
         } catch (error) {
@@ -94,7 +94,7 @@ export default function ImageDetail() {
 
     async function getComments(pageNum: number) {
         try {
-            const response = await api.get(`http://localhost:8080/image/${id}/comments?page=${pageNum}`)
+            const response = await api.get(`image/${id}/comments?page=${pageNum}`)
             if (response.data.data === null) {
                 setComments([])
                 return

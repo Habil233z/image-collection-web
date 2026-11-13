@@ -48,7 +48,7 @@ export default function Comments({
 
     async function getLike() {
         try {
-            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentItem.id}/likes`);
+            const response = await api.get(`image/${imageId}/comment/${commentItem.id}/likes`);
             setLiked(response.data.isLiked);
             setLikeCount(response.data.likeCount);
         } catch (error) {
@@ -58,7 +58,7 @@ export default function Comments({
     
     async function handleLike() {
         try {
-            await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}/like`);
+            await api.post(`api/image/${imageId}/comment/${commentItem.id}/like`);
             getLike();
         } catch (error) {
             console.log(error);
@@ -72,7 +72,7 @@ export default function Comments({
                 input?.reportValidity();
                 return;
             }
-            await api.patch(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}`, { editCommentText });
+            await api.patch(`api/image/${imageId}/comment/${commentItem.id}`, { editCommentText });
             alert("Comment has been edited");
             setIsEditCommentDialogOpen(false);
             getComments(page);
@@ -86,7 +86,7 @@ export default function Comments({
             return;
         }
         try {
-            await api.delete(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}`);
+            await api.delete(`api/image/${imageId}/comment/${commentItem.id}`);
             getComments(page);
         } catch (error) {
             console.log(error);
@@ -95,7 +95,7 @@ export default function Comments({
 
     async function getReplyCount() {
         try {
-            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentItem.id}/replies/count`);
+            const response = await api.get(`image/${imageId}/comment/${commentItem.id}/replies/count`);
             setRepliesCount(response.data.replyCount);
         } catch (error) {
             console.log(error);
@@ -104,7 +104,7 @@ export default function Comments({
 
     async function getReply() {
         try {
-            const response = await api.get(`http://localhost:8080/image/${imageId}/comment/${commentItem.id}/replies`);
+            const response = await api.get(`image/${imageId}/comment/${commentItem.id}/replies`);
             setReplies(response.data.data || []);
         } catch (error) {
             console.log(error);
@@ -124,7 +124,7 @@ export default function Comments({
 
     async function replyComment() {
         try {
-            await api.post(`http://localhost:8080/api/image/${imageId}/comment/${commentItem.id}/reply`, { reply });
+            await api.post(`api/image/${imageId}/comment/${commentItem.id}/reply`, { reply });
             setReply("");
             setIsReplying(false);
             getReply();

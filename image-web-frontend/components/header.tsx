@@ -14,7 +14,7 @@ export default function Header({ username }: HeaderProps) {
 
   async function logout() {
     try {
-      await api.post("http://localhost:8080/logout");
+      await api.post("logout");
       localStorage.removeItem("username");
       router.push("/login");
     } catch (err) {

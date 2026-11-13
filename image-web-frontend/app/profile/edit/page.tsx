@@ -15,7 +15,7 @@ export default function EditProfile() {
 
     async function getProfile() {
         try {
-            const response = await api.get("http://localhost:8080/api/profile")
+            const response = await api.get("api/profile")
             setUsername(response.data.data.username)
             localStorage.setItem("username", response.data.data.username)
             setEmail(response.data.data.email)
@@ -28,7 +28,7 @@ export default function EditProfile() {
         e.preventDefault()
         try {
             const newProfileData = new FormData(e.currentTarget)
-            await api.patch("http://localhost:8080/api/profile", newProfileData)
+            await api.patch("api/profile", newProfileData)
             alert("Profile edit successful")
             router.push(`/profile`)
         } catch (error) {

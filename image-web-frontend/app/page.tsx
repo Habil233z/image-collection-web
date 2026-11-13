@@ -18,7 +18,7 @@ export default function Home() {
 
   async function getImages(pageNum: number) {
     try {
-      const response = await api.get(`http://localhost:8080/images?page=${pageNum}`)
+      const response = await api.get(`images?page=${pageNum}`)
       setImages(response.data.data)
       if (response.data.data.length < 20) {
         setHasMore(false)
@@ -54,7 +54,7 @@ export default function Home() {
       imageData.append("imageFile", selectedFile)
       imageData.append("imageName", imageNameInput.value)
 
-      await api.post("http://localhost:8080/api/upload", imageData)
+      await api.post("api/upload", imageData)
       alert("Image upload successful")
       setOpen(false)
       setImages(null)

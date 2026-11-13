@@ -61,7 +61,7 @@ func (d *Database) Register(c *gin.Context) {
 		token,
 		maxAge,
 		"/",
-		"localhost",
+		"",
 		isSecure,
 		true, // HttpOnly
 	)
