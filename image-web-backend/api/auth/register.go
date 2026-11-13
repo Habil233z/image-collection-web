@@ -2,7 +2,6 @@ package auth
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -52,26 +51,19 @@ func (d *Database) Register(c *gin.Context) {
 
 	// 6. Set Cookie properties
 	// Determine if we are in production (release mode)
-	isRelease := os.Getenv("GIN_MODE") == "release"
 
 	// Set SameSite=None and Secure=true for cross-site production, Lax for local dev
-	sameSite := http.SameSiteLaxMode
-	if isRelease {
-		sameSite = http.SameSiteNoneMode
-	}
-
-	maxAge := 2 * 60 * 60 // 2 hours
 
 	// Construct native http.Cookie with Partitioned enabled (CHIPS)
 	authCookie := &http.Cookie{
 		Name:        "image-web-auth_token",
 		Value:       token,
 		Path:        "/",
-		MaxAge:      maxAge,
-		Secure:      isRelease, // Must be true in production when using SameSite=None
-		HttpOnly:    true,      // Prevents JavaScript access
-		SameSite:    sameSite,  // NoneMode in production, LaxMode locally
-		Partitioned: true,      // Isolates the cookie per top-level site context
+		MaxAge:      2 * 60 * 60,
+		Secure:      true,                  // Required when SameSite=None
+		HttpOnly:    true,                  // Prevents JavaScript access
+		SameSite:    http.SameSiteNoneMode, // Required for cross-site requests
+		Partitioned: true,                  // CHIPS attribute for modern browser compatibility
 	}
 
 	http.SetCookie(c.Writer, authCookie)
