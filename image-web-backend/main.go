@@ -15,15 +15,10 @@ import (
 	"image-web-backend/resources/middleware/authMiddleware"
 	"image-web-backend/resources/supabase"
 
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-// Use ginadapter.GinLambda instead of ginadapter.GinAdapter
-var ginLambda *ginadapter.GinLambda
 var router *gin.Engine
 
 func init() {
@@ -107,22 +102,16 @@ func init() {
 		api.DELETE("/image/:id/comment/:commentId/reply/:replyId", replyHandlers.DeleteReply)
 		api.POST("/image/:id/comment/:commentId/reply/:replyId/like", likeHandlers.ToggleLikeReply)
 	}
-
-	ginLambda = ginadapter.New(router)
-}
-
-func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	return ginLambda.Proxy(req)
 }
 
 func main() {
-	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") == "" {
-		log.Println("Running server locally on :8080")
-		if err := router.Run(":8080"); err != nil {
-			log.Fatalf("Local server failed: %v", err)
-		}
-		return
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
 
-	lambda.Start(Handler)
+	log.Printf("Listening and serving HTTP on localhost:%s", port)
+	if err := router.Run(":" + port); err != nil {
+		log.Fatalf("Server failed: %v", err)
+	}
 }
