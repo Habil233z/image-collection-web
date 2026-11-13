@@ -1,66 +1,66 @@
 package main
 
 import (
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"image-web-backend/api/auth"
 	"image-web-backend/api/comments"
 	"image-web-backend/api/images"
 	"image-web-backend/api/likes"
 	"image-web-backend/api/replys"
-
-	"log"
-	"os"
-	"time"
-
 	"image-web-backend/resources/database"
 	"image-web-backend/resources/middleware/authMiddleware"
-	"image-web-backend/resources/supabase" // Import your new supabase package
+	"image-web-backend/resources/supabase"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
+var ginLambda *ginadapter.GinLambda
+
+func init() {
+	if os.Getenv("GIN_MODE") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	db, err := database.Database()
 	if err != nil {
 		log.Fatalf("Database connection failed: %v", err)
 	}
-	defer db.Pool.Close()
 
 	// Initialize Supabase Storage Client
 	supabaseClient := supabase.NewStorageClient()
 	bucketName := os.Getenv("SUPABASE_BUCKET_NAME")
 	if bucketName == "" {
-		bucketName = "images" // fallback bucket name
+		bucketName = "images"
 	}
 
 	authHandlers := &auth.Database{DB: db}
-
-	// Inject Supabase client and bucket name into image handlers
 	imageHandlers := &images.Database{
 		DB:             db,
 		SupabaseClient: supabaseClient,
 		BucketName:     bucketName,
 	}
-
 	commentHandlers := &comments.Database{DB: db}
 	likeHandlers := &likes.Database{DB: db}
 	replyHandlers := &replys.Database{DB: db}
 
 	router := gin.Default()
 
-	// REMOVED: router.Static("/uploads", "./uploads") -> No longer needed as images are stored in Supabase
-
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     []string{"http://localhost:3000", "https://your-frontend-domain.vercel.app"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // Fixed capitalization for Content-Type
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		AllowOriginFunc: func(origin string) bool {
-			// FIXED: Allow your frontend development server URL test
-			return origin == "http://localhost:3000"
-		},
-		MaxAge: 12 * time.Hour,
+		MaxAge:           12 * time.Hour,
 	}))
 
 	router.POST("/register", authHandlers.Register)
@@ -101,5 +101,27 @@ func main() {
 		api.POST("/image/:id/comment/:commentId/reply/:replyId/like", likeHandlers.ToggleLikeReply)
 	}
 
-	router.Run("localhost:8080")
+	// Initialize the adapter wrapper
+	ginLambda = ginadapter.New(router)
+}
+
+// Handler maps Vercel/AWS API Gateway events into Gin context requests
+func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	return ginLambda.ProxyWithContext(ctx, req)
+}
+
+func main() {
+	if os.Getenv("VERCEL") != "1" {
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "8080"
+		}
+		log.Printf("Listening and serving HTTP on localhost:%s", port)
+		if err := http.ListenAndServe(":"+port, nil); err != nil {
+			log.Fatalf("Server failed: %v", err)
+		}
+	} else {
+		// Pass the proper Handler function signature to lambda.Start
+		lambda.Start(Handler)
+	}
 }
