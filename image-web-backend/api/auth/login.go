@@ -48,11 +48,6 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	proto := c.GetHeader("X-Forwarded-Proto")
-	origin := c.GetHeader("Origin")
-
-	isLocalhost := proto == "http" || origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000"
-
 	authCookie := &http.Cookie{
 		Name:        "image-web-auth_token",
 		Value:       token,
@@ -61,7 +56,7 @@ func (d *Database) Login(c *gin.Context) {
 		Secure:      true,
 		HttpOnly:    true,
 		SameSite:    http.SameSiteNoneMode,
-		Partitioned: !isLocalhost,
+		Partitioned: false,
 	}
 
 	http.SetCookie(c.Writer, authCookie)
