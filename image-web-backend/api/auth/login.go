@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -46,21 +47,26 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	// Determine if we are in production (release mode)
+	isProduction := os.Getenv("GIN_MODE") == "release" || os.Getenv("VERCEL") != ""
 
-	// Set SameSite=None and Secure=true for cross-site production, Lax for local de
+	secureFlag := isProduction
+	sameSiteMode := http.SameSiteLaxMode
 
-	// Construct native http.Cookie with Partitioned enabled (CHIPS)
-	authCookie := &http.Cookie{
-		Name:        "image-web-auth_token",
-		Value:       token,
-		Path:        "/",
-		MaxAge:      2 * 60 * 60,
-		Secure:      true,                  // Required when SameSite=None
-		HttpOnly:    true,                  // Prevents JavaScript access
-		SameSite:    http.SameSiteNoneMode, // Required for cross-site requests
-		Partitioned: true,                  // CHIPS attribute for modern browser compatibility
+	if isProduction {
+		sameSiteMode = http.SameSiteNoneMode
 	}
+
+	authCookie := &http.Cookie{
+		Name:     "image-web-auth_token",
+		Value:    token,
+		Path:     "/",
+		MaxAge:   2 * 60 * 60,
+		Secure:   secureFlag,   // False on localhost (HTTP), True on Vercel (HTTPS)
+		HttpOnly: true,         // Prevents JavaScript access
+		SameSite: sameSiteMode, // Lax for localhost, NoneMode for production cross-site
+	}
+
+	http.SetCookie(c.Writer, authCookie)
 
 	http.SetCookie(c.Writer, authCookie)
 
