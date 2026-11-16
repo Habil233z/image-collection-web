@@ -49,17 +49,30 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
+	// Determine if running in production (Vercel) vs local development
 	isProduction := os.Getenv("GIN_MODE") == "release" || os.Getenv("VERCEL") != ""
+
+	var secureFlag bool
+	var sameSiteMode http.SameSite
+
+	if isProduction {
+		secureFlag = true
+		sameSiteMode = http.SameSiteNoneMode
+	} else {
+		// Local HTTP requires Lax and Secure=false
+		secureFlag = false
+		sameSiteMode = http.SameSiteLaxMode
+	}
 
 	authCookie := &http.Cookie{
 		Name:        "image-web-auth_token",
 		Value:       token,
 		Path:        "/",
 		MaxAge:      2 * 60 * 60,
-		Secure:      isProduction, // false on localhost, true on Vercel
+		Secure:      secureFlag,
 		HttpOnly:    true,
-		SameSite:    http.SameSiteNoneMode,
-		Partitioned: isProduction, // false on localhost, true on Vercel
+		SameSite:    sameSiteMode,
+		Partitioned: isProduction, // True on Vercel, false on localhost
 	}
 
 	http.SetCookie(c.Writer, authCookie)
