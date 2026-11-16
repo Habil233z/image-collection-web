@@ -47,28 +47,35 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
+	isProduction := os.Getenv("GIN_MODE") == "release" || os.Getenv("VERCEL") != ""
+
+	var secureFlag bool
+	var sameSiteMode http.SameSite
+
+	if isProduction {
+		secureFlag = true
+		sameSiteMode = http.SameSiteNoneMode
+	} else {
+		// Local HTTP development requires Secure=false and SameSite=Lax
+		secureFlag = false
+		sameSiteMode = http.SameSiteLaxMode
 	}
 
-	// 2. Set cookie for production environments
-	isProduction := os.Getenv("GIN_MODE") == "release" || os.Getenv("VERCEL") != ""
 	authCookie := &http.Cookie{
 		Name:        "image-web-auth_token",
 		Value:       token,
 		Path:        "/",
 		MaxAge:      2 * 60 * 60,
-		Secure:      isProduction,
+		Secure:      secureFlag,
 		HttpOnly:    true,
-		SameSite:    http.SameSiteLaxMode,
+		SameSite:    sameSiteMode,
 		Partitioned: isProduction,
 	}
+
 	http.SetCookie(c.Writer, authCookie)
 
-	// 3. CRITICAL: Return the token in the JSON body so your frontend JavaScript can read it!
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
-		"token":   token,
+		"message": "Login Success",
+		"data":    user.Username,
 	})
 }
