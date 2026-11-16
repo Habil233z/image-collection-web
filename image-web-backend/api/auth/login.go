@@ -48,20 +48,20 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	// CRITICAL FIX: Check the request Origin instead of os.Getenv("VERCEL")
-	// Because the backend runs on Vercel, GIN_MODE/VERCEL env vars are always true.
+	proto := c.GetHeader("X-Forwarded-Proto")
 	origin := c.GetHeader("Origin")
-	isLocalhost := origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000"
+
+	isLocalhost := proto == "http" || origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000"
 
 	var secureFlag bool
 	var sameSiteMode http.SameSite
 
 	if isLocalhost {
-		// Local HTTP frontend requires Secure=false and SameSite=Lax
+		// Local HTTP development via proxy requires Secure=false and SameSite=Lax
 		secureFlag = false
 		sameSiteMode = http.SameSiteLaxMode
 	} else {
-		// Production HTTPS frontend requires Secure=true and SameSite=None
+		// Production HTTPS requires Secure=true and SameSite=None
 		secureFlag = true
 		sameSiteMode = http.SameSiteNoneMode
 	}
