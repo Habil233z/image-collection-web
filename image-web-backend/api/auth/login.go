@@ -74,11 +74,13 @@ func (d *Database) Login(c *gin.Context) {
 		SameSite:    sameSiteMode,
 		Partitioned: isProduction, // True on Vercel, false on localhost
 	}
-
+	println("[DEBUG] About to set cookie...")
 	http.SetCookie(c.Writer, authCookie)
+	println("[DEBUG] Cookie set successfully. Sending JSON...")
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login Success",
 		"data":    user.Username,
 	})
+	println("[DEBUG] JSON sent successfully!")
 }
