@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -48,15 +49,17 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
+	isProduction := os.Getenv("GIN_MODE") == "release" || os.Getenv("VERCEL") != ""
+
 	authCookie := &http.Cookie{
 		Name:        "image-web-auth_token",
 		Value:       token,
 		Path:        "/",
 		MaxAge:      2 * 60 * 60,
-		Secure:      true,
+		Secure:      isProduction, // false on localhost, true on Vercel
 		HttpOnly:    true,
 		SameSite:    http.SameSiteNoneMode,
-		Partitioned: false,
+		Partitioned: isProduction, // false on localhost, true on Vercel
 	}
 
 	http.SetCookie(c.Writer, authCookie)
