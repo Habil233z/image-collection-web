@@ -3,7 +3,6 @@ package auth
 import (
 	"errors"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -49,19 +48,22 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	// Environment detection
-	isProduction := os.Getenv("GIN_MODE") == "release" || os.Getenv("VERCEL") != ""
+	// CRITICAL FIX: Check the request Origin instead of os.Getenv("VERCEL")
+	// Because the backend runs on Vercel, GIN_MODE/VERCEL env vars are always true.
+	origin := c.GetHeader("Origin")
+	isLocalhost := origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000"
 
 	var secureFlag bool
 	var sameSiteMode http.SameSite
 
-	if isProduction {
-		secureFlag = true
-		sameSiteMode = http.SameSiteNoneMode
-	} else {
-		// Local proxy makes requests look first-party, allowing Lax + HttpOnly
+	if isLocalhost {
+		// Local HTTP frontend requires Secure=false and SameSite=Lax
 		secureFlag = false
 		sameSiteMode = http.SameSiteLaxMode
+	} else {
+		// Production HTTPS frontend requires Secure=true and SameSite=None
+		secureFlag = true
+		sameSiteMode = http.SameSiteNoneMode
 	}
 
 	authCookie := &http.Cookie{
@@ -70,9 +72,9 @@ func (d *Database) Login(c *gin.Context) {
 		Path:        "/",
 		MaxAge:      2 * 60 * 60,
 		Secure:      secureFlag,
-		HttpOnly:    true, // Strict HttpOnly protection
+		HttpOnly:    true,
 		SameSite:    sameSiteMode,
-		Partitioned: isProduction,
+		Partitioned: !isLocalhost,
 	}
 
 	http.SetCookie(c.Writer, authCookie)
