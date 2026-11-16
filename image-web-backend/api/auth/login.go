@@ -48,33 +48,15 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	proto := c.GetHeader("X-Forwarded-Proto")
-	origin := c.GetHeader("Origin")
-
-	isLocalhost := proto == "http" || origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000"
-
-	var secureFlag bool
-	var sameSiteMode http.SameSite
-
-	if isLocalhost {
-		// Local HTTP development via proxy requires Secure=false and SameSite=Lax
-		secureFlag = false
-		sameSiteMode = http.SameSiteLaxMode
-	} else {
-		// Production HTTPS requires Secure=true and SameSite=None
-		secureFlag = true
-		sameSiteMode = http.SameSiteNoneMode
-	}
-
 	authCookie := &http.Cookie{
 		Name:        "image-web-auth_token",
 		Value:       token,
 		Path:        "/",
 		MaxAge:      2 * 60 * 60,
-		Secure:      secureFlag,
+		Secure:      true,
 		HttpOnly:    true,
-		SameSite:    sameSiteMode,
-		Partitioned: !isLocalhost,
+		SameSite:    http.SameSiteNoneMode,
+		Partitioned: true,
 	}
 
 	http.SetCookie(c.Writer, authCookie)
