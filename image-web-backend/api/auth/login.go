@@ -3,7 +3,6 @@ package auth
 import (
 	"errors"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -19,7 +18,12 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	err := d.DB.Pool.QueryRow(c.Request.Context(), "SELECT id, email, username, password FROM users WHERE username = $1 OR email = $1", input.EmailOrUsername).Scan(&user.ID, &user.Email, &user.Username, &user.Password)
+	err := d.DB.Pool.QueryRow(
+		c.Request.Context(),
+		"SELECT id, email, username, password FROM users WHERE username = $1 OR email = $1",
+		input.EmailOrUsername,
+	).Scan(&user.ID, &user.Email, &user.Username, &user.Password)
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -29,9 +33,7 @@ func (d *Database) Login(c *gin.Context) {
 			return
 		}
 
-		// PRINT THE EXACT ERROR IN YOUR TERMINAL
 		println("[Login Error] DB Query failed:", err.Error())
-
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error: " + err.Error()})
 		return
 	}
@@ -47,18 +49,21 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	isProduction := os.Getenv("GIN_MODE") == "release" || os.Getenv("VERCEL") != ""
+	// Dynamically check origin to handle local HTTP vs production HTTPS seamlessly
+	origin := c.GetHeader("Origin")
+	isLocalhost := origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000"
 
 	var secureFlag bool
 	var sameSiteMode http.SameSite
 
-	if isProduction {
-		secureFlag = true
-		sameSiteMode = http.SameSiteNoneMode
-	} else {
+	if isLocalhost {
 		// Local HTTP development requires Secure=false and SameSite=Lax
 		secureFlag = false
 		sameSiteMode = http.SameSiteLaxMode
+	} else {
+		// Production HTTPS frontend requires Secure=true and SameSite=None
+		secureFlag = true
+		sameSiteMode = http.SameSiteNoneMode
 	}
 
 	authCookie := &http.Cookie{
@@ -69,7 +74,7 @@ func (d *Database) Login(c *gin.Context) {
 		Secure:      secureFlag,
 		HttpOnly:    true,
 		SameSite:    sameSiteMode,
-		Partitioned: isProduction,
+		Partitioned: !isLocalhost,
 	}
 
 	http.SetCookie(c.Writer, authCookie)
