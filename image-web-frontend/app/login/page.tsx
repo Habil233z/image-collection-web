@@ -12,25 +12,25 @@ export default function Login() {
     const [password, setPassword] = useState("")
     const router = useRouter()
 
-    async function clickLogin(e: React.FormEvent) {
-        e.preventDefault()
-        try {
-            const response = await api.post("/login", { emailOrUsername, password })
-            
-            // Store the username returned in the JSON response
-            if (response.data && response.data.data) {
-                localStorage.setItem("username", response.data.data)
-            }
-            
-            // Redirect to home/dashboard
-            router.push("/")
-        } catch (err: any) {
-            // Extract the specific error message from the backend response if available
-            const errorMessage = err.response?.data?.message || err.response?.data?.error || "Login failed"
-            alert(errorMessage)
-            console.error("Login error:", err)
+async function clickLogin(e: React.FormEvent) {
+    e.preventDefault()
+    console.log("Attempting login...")
+    
+    try {
+        const response = await api.post("login", { emailOrUsername, password })
+        console.log("SUCCESS! Response data:", response.data) // <-- Look at this in your F12 console
+        router.push("/")
+        if (response.data && response.data.data) {
+            localStorage.setItem("username", response.data.data)
         }
+        
+        // Uncomment this once you verify the data object in console
+        router.push("/")
+    } catch (err: any) {
+        console.error("Login failed:", err)
+        alert(err.response?.data?.message || "Login failed")
     }
+}
 
     return (
         <div className="w-screen h-screen bg-linear-to-br from-sky-200 via-sky-300 to-blue-400 flex flex-col items-center justify-center px-4">

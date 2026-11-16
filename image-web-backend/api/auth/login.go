@@ -3,7 +3,6 @@ package auth
 import (
 	"errors"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -49,19 +48,22 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	// Determine if running in production (Vercel) vs local development
-	isProduction := os.Getenv("GIN_MODE") == "release" || os.Getenv("VERCEL") != ""
+	// Detect if request is coming through local development / proxy
+	origin := c.GetHeader("Origin")
+	host := c.GetHeader("X-Forwarded-Host")
+	isLocal := origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000" || host == "localhost:3000"
 
 	var secureFlag bool
 	var sameSiteMode http.SameSite
 
-	if isProduction {
-		secureFlag = true
-		sameSiteMode = http.SameSiteNoneMode
-	} else {
-		// Local HTTP requires Lax and Secure=false
+	if isLocal {
+		// Local development via proxy: MUST be Secure=false and SameSite=Lax
 		secureFlag = false
 		sameSiteMode = http.SameSiteLaxMode
+	} else {
+		// Production Vercel: Secure=true and SameSite=None
+		secureFlag = true
+		sameSiteMode = http.SameSiteNoneMode
 	}
 
 	authCookie := &http.Cookie{
@@ -72,8 +74,9 @@ func (d *Database) Login(c *gin.Context) {
 		Secure:      secureFlag,
 		HttpOnly:    true,
 		SameSite:    sameSiteMode,
-		Partitioned: isProduction, // True on Vercel, false on localhost
+		Partitioned: !isLocal, // False locally, True in production
 	}
+
 	println("[DEBUG] About to set cookie...")
 	http.SetCookie(c.Writer, authCookie)
 	println("[DEBUG] Cookie set successfully. Sending JSON...")
