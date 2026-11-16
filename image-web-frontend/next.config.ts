@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/:path*", // Or "/login", etc. depending on your route prefix
+        source: "/api-backend/:path*",
         destination: "https://image-collection-web.vercel.app/:path*",
       },
     ];

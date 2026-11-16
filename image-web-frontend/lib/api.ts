@@ -1,9 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "", // Empty string means it targets http://localhost:3000/api/...
+    baseURL: "/api-backend", // Automatically routes through the Next.js rewrite proxy
     timeout: 10000,
-    withCredentials: true, // Crucial for sending/receiving cookies
+    withCredentials: true,
     headers: {
         "Content-Type": "application/json",
     }

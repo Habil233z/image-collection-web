@@ -50,27 +50,42 @@ func (d *Database) Register(c *gin.Context) {
 	}
 
 	// 6. Set Cookie properties
-	// Determine if we are in production (release mode)
+	// Detect if request is coming through local development / proxy
+	origin := c.GetHeader("Origin")
+	host := c.GetHeader("X-Forwarded-Host")
+	isLocal := origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000" || host == "localhost:3000"
 
-	// Set SameSite=None and Secure=true for cross-site production, Lax for local dev
+	var secureFlag bool
+	var sameSiteMode http.SameSite
 
-	// Construct native http.Cookie with Partitioned enabled (CHIPS)
+	if isLocal {
+		// Local development via proxy: MUST be Secure=false and SameSite=Lax
+		secureFlag = false
+		sameSiteMode = http.SameSiteLaxMode
+	} else {
+		// Production Vercel: Secure=true and SameSite=None
+		secureFlag = true
+		sameSiteMode = http.SameSiteNoneMode
+	}
+
 	authCookie := &http.Cookie{
 		Name:        "image-web-auth_token",
 		Value:       token,
 		Path:        "/",
 		MaxAge:      2 * 60 * 60,
-		Secure:      true,                  // Required when SameSite=None
-		HttpOnly:    true,                  // Prevents JavaScript access
-		SameSite:    http.SameSiteNoneMode, // Required for cross-site requests
-		Partitioned: true,                  // CHIPS attribute for modern browser compatibility
+		Secure:      secureFlag,
+		HttpOnly:    true,
+		SameSite:    sameSiteMode,
+		Partitioned: !isLocal, // False locally, True in production
 	}
 
+	println("[DEBUG] About to set cookie...")
 	http.SetCookie(c.Writer, authCookie)
+	println("[DEBUG] Cookie set successfully. Sending JSON...")
 
-	// 7. Return success response with username and HTTP Status Created
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "Success",
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login Success",
 		"data":    user.Username,
 	})
+	println("[DEBUG] JSON sent successfully!")
 }

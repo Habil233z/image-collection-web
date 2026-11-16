@@ -19,14 +19,18 @@ export default function Home() {
   async function getImages(pageNum: number) {
     try {
       const response = await api.get(`images?page=${pageNum}`)
-      setImages(response.data.data)
-      if (response.data.data.length < 20) {
+      console.log("Images API Response:", response.data) // Check F12 Console to see what comes back
+      
+      const fetchedImages = response.data.data || []
+      setImages(fetchedImages)
+      
+      if (fetchedImages.length < 20) {
         setHasMore(false)
       } else {
         setHasMore(true)
       }
     } catch (error) {
-      console.log(error)
+      console.error("Failed to fetch images:", error)
     }
   }
 
