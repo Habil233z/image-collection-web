@@ -1,12 +1,12 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "https://image-collection-web.vercel.app/",
+    baseURL: "", // Empty string routes through the Next.js local proxy rewrite
     timeout: 5000,
-    withCredentials: true,
+    withCredentials: true, // Crucial for sending/receiving HttpOnly cookies
     headers: {
         "Content-Type": "application/json",
     }
-})
+});
 
 export default api

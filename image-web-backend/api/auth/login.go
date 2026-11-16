@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -33,8 +34,7 @@ func (d *Database) Login(c *gin.Context) {
 			return
 		}
 
-		println("[Login Error] DB Query failed:", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
 		return
 	}
 
@@ -49,21 +49,19 @@ func (d *Database) Login(c *gin.Context) {
 		return
 	}
 
-	// Dynamically check origin to handle local HTTP vs production HTTPS seamlessly
-	origin := c.GetHeader("Origin")
-	isLocalhost := origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000"
+	// Environment detection
+	isProduction := os.Getenv("GIN_MODE") == "release" || os.Getenv("VERCEL") != ""
 
 	var secureFlag bool
 	var sameSiteMode http.SameSite
 
-	if isLocalhost {
-		// Local HTTP development requires Secure=false and SameSite=Lax
-		secureFlag = false
-		sameSiteMode = http.SameSiteLaxMode
-	} else {
-		// Production HTTPS frontend requires Secure=true and SameSite=None
+	if isProduction {
 		secureFlag = true
 		sameSiteMode = http.SameSiteNoneMode
+	} else {
+		// Local proxy makes requests look first-party, allowing Lax + HttpOnly
+		secureFlag = false
+		sameSiteMode = http.SameSiteLaxMode
 	}
 
 	authCookie := &http.Cookie{
@@ -72,9 +70,9 @@ func (d *Database) Login(c *gin.Context) {
 		Path:        "/",
 		MaxAge:      2 * 60 * 60,
 		Secure:      secureFlag,
-		HttpOnly:    true,
+		HttpOnly:    true, // Strict HttpOnly protection
 		SameSite:    sameSiteMode,
-		Partitioned: !isLocalhost,
+		Partitioned: isProduction,
 	}
 
 	http.SetCookie(c.Writer, authCookie)

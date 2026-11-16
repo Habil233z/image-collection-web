@@ -15,12 +15,20 @@ export default function Login() {
     async function clickLogin(e: React.FormEvent) {
         e.preventDefault()
         try {
-            const response = await api.post("login", { emailOrUsername, password })
-            localStorage.setItem("username", response.data.data)
+            const response = await api.post("/login", { emailOrUsername, password })
+            
+            // Store the username returned in the JSON response
+            if (response.data && response.data.data) {
+                localStorage.setItem("username", response.data.data)
+            }
+            
+            // Redirect to home/dashboard
             router.push("/")
-        } catch (err) {
-            alert("User didn't exist or wrong password")
-            console.log(err)
+        } catch (err: any) {
+            // Extract the specific error message from the backend response if available
+            const errorMessage = err.response?.data?.message || err.response?.data?.error || "Login failed"
+            alert(errorMessage)
+            console.error("Login error:", err)
         }
     }
 
