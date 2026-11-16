@@ -57,13 +57,14 @@ func (d *Database) Login(c *gin.Context) {
 	}
 
 	authCookie := &http.Cookie{
-		Name:     "image-web-auth_token",
-		Value:    token,
-		Path:     "/",
-		MaxAge:   2 * 60 * 60,
-		Secure:   secureFlag,   // False on localhost (HTTP), True on Vercel (HTTPS)
-		HttpOnly: true,         // Prevents JavaScript access
-		SameSite: sameSiteMode, // Lax for localhost, NoneMode for production cross-site
+		Name:        "image-web-auth_token",
+		Value:       token,
+		Path:        "/",
+		MaxAge:      2 * 60 * 60,
+		Secure:      secureFlag,   // False on localhost (HTTP), True on Vercel (HTTPS)
+		HttpOnly:    true,         // Prevents JavaScript access
+		SameSite:    sameSiteMode, // Lax for localhost, NoneMode for production cross-site
+		Partitioned: true,         // CHIPS attribute for modern browser compatibility
 	}
 
 	http.SetCookie(c.Writer, authCookie)
