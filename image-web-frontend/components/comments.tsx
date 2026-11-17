@@ -57,27 +57,50 @@ export default function Comments({
     }
     
     async function handleLike() {
+        const previousLiked = liked;
+        const previousLikeCount = likeCount;
+
+        const newLikedState = !liked;
+        const newLikeCount = newLikedState ? likeCount + 1 : Math.max(0, likeCount - 1);
+
+        setLiked(newLikedState);
+        setLikeCount(newLikeCount);
+
         try {
             await api.post(`api/image/${imageId}/comment/${commentItem.id}/like`);
-            getLike();
         } catch (error) {
-            console.log(error);
+            console.log("Failed to like comment, rolling back", error);
+
+            setLiked(previousLiked);
+            setLikeCount(previousLikeCount);
         }
     }
 
     async function editComment() {
+        if (!editCommentText.trim()) {
+            const input = document.getElementById("editCommentInput") as HTMLInputElement;
+            input?.reportValidity();
+            return;
+        }
+
+        const previousCommentText = commentItem.comment;
+        const updatedText = editCommentText;
+
+        setComments((prevComments) =>
+            prevComments.map((c) => (c.id === commentItem.id ? { ...c, comment: updatedText } : c))
+        );
+        setIsEditCommentDialogOpen(false);
+
         try {
-            if (!editCommentText.trim()) {
-                const input = document.getElementById("editCommentInput") as HTMLInputElement;
-                input?.reportValidity();
-                return;
-            }
-            await api.patch(`api/image/${imageId}/comment/${commentItem.id}`, { editCommentText });
-            alert("Comment has been edited");
-            setIsEditCommentDialogOpen(false);
-            getComments(page);
+            await api.patch(`api/image/${imageId}/comment/${commentItem.id}`, { editCommentText: updatedText });
+
+            
         } catch (error) {
-            console.log(error);
+            console.log("Failed to edit comment, rolling back", error);
+            
+            setComments((prevComments) =>
+                prevComments.map((c) => (c.id === commentItem.id ? { ...c, comment: previousCommentText } : c))
+            );
         }
     }
 
@@ -86,10 +109,20 @@ export default function Comments({
             return;
         }
         try {
+            const comment= document.getElementById(commentItem.id)
+            if (comment) {
+                comment.style.display = "none"
+            }
             await api.delete(`api/image/${imageId}/comment/${commentItem.id}`);
+
             getComments(page);
         } catch (error) {
             console.log(error);
+
+            const comment= document.getElementById(commentItem.id)
+            if (comment) {
+                comment.style.display = "block"
+            }
         }
     }
 
@@ -123,14 +156,37 @@ export default function Comments({
     }
 
     async function replyComment() {
+        if (!reply.trim()) return;
+
+        const previousReplies = [...replies];
+        const previousRepliesCount = repliesCount;
+
+        const tempReplyId = Date.now();
+        const optimisticReply = {
+            id: tempReplyId,
+            reply: reply,
+            username: username || "You",
+            created_at: new Date().toISOString(),
+        };
+
+        setReplies((prevReplies) => [...prevReplies, optimisticReply]);
+        setRepliesCount((prev) => prev + 1);
+
+        const currentReplyText = reply;
+        setReply("");
+        setIsReplying(false);
+        setShowReplies(true);
+
         try {
-            await api.post(`api/image/${imageId}/comment/${commentItem.id}/reply`, { reply });
-            setReply("");
-            setIsReplying(false);
+            await api.post(`api/image/${imageId}/comment/${commentItem.id}/reply`, { reply: currentReplyText });
             getReply();
             getReplyCount();
         } catch (error) {
-            console.error("Failed to post reply:", error);
+            console.error("Failed to post reply, rolling back:", error);
+
+            setReplies(previousReplies);
+            setRepliesCount(previousRepliesCount);
+            setReply(currentReplyText);
         }
     }
 
@@ -141,7 +197,7 @@ export default function Comments({
 
     return (
         <>
-        <div key={commentItem.id} className="bg-white/80 backdrop-blur-xs rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm transition hover:shadow-md flex flex-col justify-between self-start">
+        <div id={commentItem.id} key={commentItem.id} className="bg-white/80 backdrop-blur-xs rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm transition hover:shadow-md flex flex-col justify-between self-start">
             <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">

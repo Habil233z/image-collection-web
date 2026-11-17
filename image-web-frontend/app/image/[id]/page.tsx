@@ -68,27 +68,55 @@ export default function ImageDetail() {
     }
 
     async function handleLike() {
+        const previousLiked = liked
+        const previousLikesCount = likesCount
+
+        const newLikedState = !liked
+        const newLikesCount = newLikedState ? likesCount + 1 : Math.max(0, likesCount - 1)
+
+        setLiked(newLikedState)
+        setLikesCount(newLikesCount)
+
         try {
-            setLiked(!liked)
             await api.post(`api/image/${id}/like`)
-            getLikes()
         } catch (error) {
-            console.log(error)
+            console.log("Failed to like image:", error)
+            setLiked(previousLiked)
+            setLikesCount(previousLikesCount)
         }
     }
 
     async function createComment() {
+        if (comment.trim().length === 0) {
+            const inputEl = document.getElementById("createCommentInput") as HTMLInputElement
+            inputEl?.reportValidity()
+            return
+        }
+
+        const previousComments = [...comments]
+
+        const tempCommentId = Date.now()
+        const optimisticComment = {
+            id: tempCommentId,
+            comment: comment,
+            username: username || "You",
+            created_at: new Date().toISOString(),
+        }
+
+        setComments((prev) => [optimisticComment, ...prev])
+        const commentToSend = comment
+        setComment("")
+
         try {
-            if (comment.length === 0) {
-                const inputEl = document.getElementById("createCommentInput") as HTMLInputElement
-                inputEl?.reportValidity()
-                return
-            }
-            await api.post(`api/image/${id}/comments`, { comment })
-            setComment("")
+            await api.post(`api/image/${id}/comments`, { comment: commentToSend })
+            
             getComments(page)
         } catch (error) {
-            console.log(error)
+            console.error("Failed to create comment:", error)
+            alert("Failed to post comment.")
+
+            setComments(previousComments)
+            setComment(commentToSend)
         }
     }
 

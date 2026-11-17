@@ -53,7 +53,7 @@ export default function Home() {
     }
   }
 
-async function handleUploadImage(e: React.FormEvent<HTMLFormElement>) {
+async function handleUploadImage(e: any) {
     e.preventDefault()
     if (!selectedFile) {
       alert("Please select an image file")
@@ -61,23 +61,20 @@ async function handleUploadImage(e: React.FormEvent<HTMLFormElement>) {
     }
     try {
       const formElement = e.currentTarget
-      const imageNameInput = formElement.elements.namedItem("imageName") as HTMLInputElement
-      
+      const imageNameInput = formElement.elements.namedItem("imageName")
       const imageData = new FormData()
       imageData.append("imageFile", selectedFile)
-      imageData.append("imageName", imageNameInput ? imageNameInput.value : "")
+      imageData.append("imageName", imageNameInput.value)
 
-      await api.post("api/upload", imageData, {headers: {"Content-Type": undefined}})
-      
-      alert("Image upload successful")
+      setLoading(true)
       setOpen(false)
-      setImages(null)
-      setPreviewImage(null)
-      setSelectedFile(null)
+      await api.post("api/upload", imageData, {headers: {"Content-Type": undefined}})
+      setLoading(false)
       getImages(page)
     } catch (error: any) {
-      console.error("Upload error:", error.response?.data || error)
+      console.error("Upload error:", error)
       alert(error.response?.data?.error || "Failed to upload image")
+      setLoading(false)
     }
   }
 

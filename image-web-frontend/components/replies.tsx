@@ -38,7 +38,7 @@ export default function Replies({
 
     const isOwner = replyItem.username === commentUsername;
 
-    async function getReplyLike() {
+async function getReplyLike() {
         try {
             const response = await api.get(`image/${imageId}/comment/${commentId}/replies/${replyItem.id}/likes`);
             setLikedReply(response.data.isLiked);
@@ -49,23 +49,42 @@ export default function Replies({
     }
 
     async function handleLikeReply() {
+        const previousLiked = likedReply;
+        const previousCount = likeReplyCount;
+
+        const newLikedState = !likedReply;
+        const newCount = newLikedState ? likeReplyCount + 1 : Math.max(0, likeReplyCount - 1);
+
+        setLikedReply(newLikedState);
+        setLikeReplyCount(newCount);
+
         try {
             await api.post(`api/image/${imageId}/comment/${commentId}/reply/${replyItem.id}/like`);
-            getReplyLike();
         } catch (error) {
-            console.log(error);
+            console.log("Failed to like reply, rolling back", error);
+
+            setLikedReply(previousLiked);
+            setLikeReplyCount(previousCount);
         }
     }
 
     async function editReply() {
+        if (!editReplyText.trim()) return;
+
+        const previousText = replyItem.reply;
+        const updatedText = editReplyText;
+
+        replyItem.reply = updatedText; 
+        setIsEditReplyDialogOpen(false);
+
         try {
-            if (!editReplyText.trim()) return;
-            await api.patch(`api/image/${imageId}/comment/${commentId}/reply/${replyItem.id}`, { editReplyText });
-            alert("Reply has been edited");
-            setIsEditReplyDialogOpen(false);
-            getReply();
+            await api.patch(`api/image/${imageId}/comment/${commentId}/reply/${replyItem.id}`, { editReplyText: updatedText });
+
         } catch (error) {
-            console.log(error);
+            console.log("Failed to edit reply, rolling back", error);
+            
+            replyItem.reply = previousText;
+            setEditReplyText(previousText);
         }
     }
 
@@ -74,8 +93,12 @@ export default function Replies({
             return;
         }
         try {
+            const comment= document.getElementById(replyItem.id)
+            if (comment) {
+                comment.style.display = "none"
+            }
             await api.delete(`api/image/${imageId}/comment/${commentId}/reply/${replyItem.id}`);
-            getReply();
+            
         } catch (error) {
             console.log(error);
         }
@@ -89,7 +112,7 @@ export default function Replies({
         <>
             
                 {isOwner ? (
-                    <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 mr-10">
+                    <div id={replyItem.id} className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 mr-10">
                     <div className="flex">
                         <div className="flex gap-4">
                             <div className="w-10 h-10 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
@@ -149,7 +172,7 @@ export default function Replies({
                     </div>
                 </div>
                 ) : (
-                <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 ml-10">
+                <div id={replyItem.id} className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 ml-10">
                     <div className="flex items-start justify-between">
                         <div className="flex flex-col items-end gap-1">
                             {username === replyItem.username && (

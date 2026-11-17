@@ -24,7 +24,7 @@ export default function EditImage() {
             const data = response.data.data
             
             setImageName(data.title)
-            setCurrentImagePath(data.image_url) // FIXED: Changed from image_path to image_url
+            setCurrentImagePath(data.image_url)
             
             const storedUser = localStorage.getItem("username")
             if (storedUser !== data.username) {
