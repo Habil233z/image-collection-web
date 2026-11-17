@@ -102,7 +102,7 @@ async function handleUploadImage(e: any) {
             <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 h-full pb-10 break-inside-avoid mb-4">
               {images.map((image) => (
                 <Link key={image.id} href={`/image/${image.id}`}>
-                    <div className="overflow-hidden bg-gray-100 hover:scale-105 duration-300">
+                    <div className="overflow-hidden bg-gray-100 hover:scale-105 duration-300 mb-4">
                       <img 
                         src={`${image.image_url}`} 
                         alt={image.image_name} 
