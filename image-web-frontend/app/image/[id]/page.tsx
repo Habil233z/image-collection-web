@@ -148,6 +148,8 @@ export default function ImageDetail() {
         }
     }, [page, id]);
 
+    //Test
+
     return (
         <div className="min-h-screen w-full bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col pb-16">
             <Header username={username} />
