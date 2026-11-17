@@ -14,7 +14,7 @@ export default function EditImage() {
 
     const [username, setUsername] = useState<string | null>(null)
     const [imageName, setImageName] = useState<string>("")
-    const [currentImagePath, setCurrentImagePath] = useState<string>("")
+    const [currentImagePath, setCurrentImagePath] = useState<string | null>(null)
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
@@ -51,7 +51,8 @@ export default function EditImage() {
             formData.append("imageFile", imageFile)
         }
         try {
-            await api.patch(`api/image/${id}`, formData)
+            await api.patch(`api/image/${id}`, formData, {headers: {"Content-Type": undefined}})
+
             router.push(`/image/${id}`)
         } catch (err: any) {
             console.error("Error updating image:", err)
@@ -93,7 +94,7 @@ export default function EditImage() {
                                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 self-start">Image (Click to change)</label>
                                 <label className="cursor-pointer w-full flex flex-col items-center justify-center border-2 border-dashed border-sky-300 rounded-2xl bg-sky-50/50 hover:bg-sky-50 p-4 transition group">
                                     <img 
-                                        src={previewUrl || `${currentImagePath}`} 
+                                        src={previewUrl || currentImagePath || "test"} 
                                         className="max-h-72 w-auto object-contain rounded-xl shadow-xs group-hover:scale-[1.02] transition" 
                                         alt="Preview"
                                     />

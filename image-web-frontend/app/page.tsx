@@ -16,7 +16,11 @@ export default function Home() {
   const [page, setPage] = useState<number>(1)
   const [hasMore, setHasMore] = useState<boolean>(true)
 
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<boolean>(false)
+
   async function getImages(pageNum: number) {
+    setLoading(true)
     try {
       const response = await api.get(`images?page=${pageNum}`)
       console.log("Images API Response:", response.data) // Check F12 Console to see what comes back
@@ -29,8 +33,12 @@ export default function Home() {
       } else {
         setHasMore(true)
       }
+      setError(false)
+      setLoading(false)
     } catch (error) {
       console.error("Failed to fetch images:", error)
+      setError(true)
+      setLoading(false)
     }
   }
 
@@ -45,7 +53,7 @@ export default function Home() {
     }
   }
 
-  async function handleUploadImage(e: any) {
+async function handleUploadImage(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!selectedFile) {
       alert("Please select an image file")
@@ -53,20 +61,23 @@ export default function Home() {
     }
     try {
       const formElement = e.currentTarget
-      const imageNameInput = formElement.elements.namedItem("imageName")
+      const imageNameInput = formElement.elements.namedItem("imageName") as HTMLInputElement
+      
       const imageData = new FormData()
       imageData.append("imageFile", selectedFile)
-      imageData.append("imageName", imageNameInput.value)
+      imageData.append("imageName", imageNameInput ? imageNameInput.value : "")
 
-      await api.post("api/upload", imageData)
+      await api.post("api/upload", imageData, {headers: {"Content-Type": undefined}})
+      
       alert("Image upload successful")
       setOpen(false)
       setImages(null)
       setPreviewImage(null)
       setSelectedFile(null)
       getImages(page)
-    } catch (error) {
-      console.log(error)
+    } catch (error: any) {
+      console.error("Upload error:", error.response?.data || error)
+      alert(error.response?.data?.error || "Failed to upload image")
     }
   }
 
@@ -81,31 +92,42 @@ export default function Home() {
       <Header username={username} />
 
       <main className="px-6 py-2 mx-auto w-full">
-        {images && images.length > 0 ? (
-          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 h-full pb-10 break-inside-avoid mb-4">
-            {images.map((image) => (
-              <Link key={image.id} href={`/image/${image.id}`}>
-                  <div className="overflow-hidden bg-gray-100 hover:scale-105 duration-300">
-                    <img 
-                      src={`${image.image_url}`} 
-                      alt={image.image_name} 
-                      className="w-full h-auto object-cover"
-                    />
-                  </div>
-              </Link>
-            ))}
+
+        {loading && (
+          <div className="flex w-full mt-40 justify-center items-center text-4xl">
+              Loading Data...
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-            <div className="bg-white/60 backdrop-blur-md border border-white/60 p-8 rounded-3xl shadow-xl max-w-md">
-              <p className="text-2xl font-bold text-gray-800 mb-2">No images found</p>
-              <p className="text-sm text-gray-500">Upload your first image share it with others!</p>
+        )}
+
+        {!loading && (
+          <>
+            {images && images.length > 0 ? (
+            <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 h-full pb-10 break-inside-avoid mb-4">
+              {images.map((image) => (
+                <Link key={image.id} href={`/image/${image.id}`}>
+                    <div className="overflow-hidden bg-gray-100 hover:scale-105 duration-300">
+                      <img 
+                        src={`${image.image_url}`} 
+                        alt={image.image_name} 
+                        className="w-full h-auto object-cover"
+                      />
+                    </div>
+                </Link>
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+              <div className="bg-white/60 backdrop-blur-md border border-white/60 p-8 rounded-3xl shadow-xl max-w-md">
+                <p className="text-2xl font-bold text-gray-800 mb-2">No images found</p>
+                <p className="text-sm text-gray-500">Upload your first image share it with others!</p>
+              </div>
+            </div>
+          )}
+        </>
         )}
       </main>
 
-      {images && images.length > 0 && (
+      {images && !loading && images.length > 0 && (
           <div className="flex justify-center items-center gap-4 mt-2 pb-4">
               <Button 
                 onClick={() => setPage((prev) => Math.max(prev - 1, 1))} 
