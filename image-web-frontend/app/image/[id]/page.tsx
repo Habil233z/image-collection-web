@@ -17,6 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Comments from "@/components/comments";
+import { getStoredUsername, loginUrl } from "@/lib/auth";
 
 export default function ImageDetail() {
     const params = useParams()
@@ -68,6 +69,11 @@ export default function ImageDetail() {
     }
 
     async function handleLike() {
+        if (!username) {
+            // liking needs an account
+            router.push(loginUrl(`/image/${id}`))
+            return
+        }
         const previousLiked = liked
         const previousLikesCount = likesCount
 
@@ -87,6 +93,10 @@ export default function ImageDetail() {
     }
 
     async function createComment() {
+        if (!username) {
+            router.push(loginUrl(`/image/${id}`))
+            return
+        }
         if (comment.trim().length === 0) {
             const inputEl = document.getElementById("createCommentInput") as HTMLInputElement
             inputEl?.reportValidity()
@@ -139,7 +149,7 @@ export default function ImageDetail() {
     }
     
     useEffect(() => {
-        const storedUsername = localStorage.getItem("username")
+        const storedUsername = getStoredUsername()
         setUsername(storedUsername)
         if (id) {
             getImageDetail()
@@ -257,6 +267,7 @@ export default function ImageDetail() {
                         <p className="text-lg font-medium text-gray-400 text-center py-6">No Comments yet. Be the first to comment!</p>
                     )}
 
+                    {username ? (
                     <div className="bg-white/80 rounded-2xl p-4 border border-white/80 flex flex-col gap-3 mt-auto shadow-inner">
                         <label className="text-sm font-semibold uppercase tracking-wider text-gray-600">Your comment</label>
                         <input 
@@ -272,6 +283,16 @@ export default function ImageDetail() {
                             Send
                         </Button>
                     </div>
+                    ) : (
+                        <div className="bg-white/80 rounded-2xl p-4 border border-white/80 flex flex-col items-center gap-3 mt-auto shadow-inner">
+                            <p className="text-gray-600 text-center">Log in to like this image or join the conversation.</p>
+                            <Link href={loginUrl(`/image/${id}`)}>
+                                <Button className="bg-neutral-900 hover:bg-black text-white font-medium px-6 py-2.5 rounded-full transition shadow-lg">
+                                    Log in
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

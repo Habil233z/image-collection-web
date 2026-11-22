@@ -5,13 +5,19 @@ import Header from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import api from "@/lib/api"
+import { getStoredUsername } from "@/lib/auth"
+import ImageCropper from "@/components/image-cropper"
 import Link from "next/link"
 
 export default function Home() {
   const [username, setUsername] = useState<string | null>(null)
+  const [authChecked, setAuthChecked] = useState<boolean>(false)
   const [images, setImages] = useState<any[] | null>(null)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  // file currently being cropped/resized (null = cropper closed)
+  const [cropFile, setCropFile] = useState<File | null>(null)
+  const [cropUrl, setCropUrl] = useState<string | null>(null)
   const [open, setOpen] = useState<boolean>(false)
   const [page, setPage] = useState<number>(1)
   const [hasMore, setHasMore] = useState<boolean>(true)
@@ -42,14 +48,38 @@ export default function Home() {
     }
   }
 
+  function setFinalFile(file: File | null) {
+    setSelectedFile(file)
+    setPreviewImage((old) => {
+      if (old) URL.revokeObjectURL(old)
+      return file ? URL.createObjectURL(file) : null
+    })
+  }
+
+  function openCropper(file: File) {
+    setCropFile(file)
+    setCropUrl(URL.createObjectURL(file))
+  }
+
+  function closeCropper() {
+    if (cropUrl) URL.revokeObjectURL(cropUrl)
+    setCropFile(null)
+    setCropUrl(null)
+  }
+
   function handleImageChange(e: any) {
     const file = e.target.files?.[0]
+    e.target.value = "" // allow re-picking the same file
     if (file) {
-      setSelectedFile(file)
-      const image = URL.createObjectURL(file)
-      setPreviewImage(image)
-    } else {
-      setPreviewImage(null)
+      openCropper(file) // let the user crop / resize before it is used
+    }
+  }
+
+  function handleDialogChange(next: boolean) {
+    setOpen(next)
+    if (!next) {
+      closeCropper()
+      setFinalFile(null)
     }
   }
 
@@ -69,6 +99,7 @@ async function handleUploadImage(e: any) {
       setLoading(true)
       setOpen(false)
       await api.post("api/upload", imageData, {headers: {"Content-Type": undefined}})
+      setFinalFile(null)
       setLoading(false)
       getImages(page)
     } catch (error: any) {
@@ -79,8 +110,9 @@ async function handleUploadImage(e: any) {
   }
 
   useEffect(() => {
-    const storedUsername = localStorage.getItem("username")
+    const storedUsername = getStoredUsername()
     setUsername(storedUsername)
+    setAuthChecked(true)
     getImages(page)
   }, [page]);
 
@@ -146,27 +178,56 @@ async function handleUploadImage(e: any) {
             </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      {username ? (
+      <Dialog open={open} onOpenChange={handleDialogChange}>
         <DialogTrigger className="fixed bottom-8 right-8 bg-black hover:bg-gray-800 text-white px-6 py-4 rounded-full shadow-2xl font-medium flex items-center gap-2 z-50">
           <span>+ Upload Image</span>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md rounded-3xl bg-white/95 backdrop-blur-md border border-white/60 p-6">
+        <DialogContent className={`${cropFile ? "sm:max-w-2xl" : "sm:max-w-md"} max-h-[95vh] overflow-y-auto rounded-3xl bg-white/95 backdrop-blur-md border border-white/60 p-6`}>
           <DialogHeader className="space-y-4">
-            <DialogTitle className="text-center text-2xl font-bold text-gray-900">Upload your image</DialogTitle>
+            <DialogTitle className="text-center text-2xl font-bold text-gray-900">
+              {cropFile ? "Crop & resize" : "Upload your image"}
+            </DialogTitle>
+
+            {cropFile && cropUrl ? (
+              <ImageCropper
+                src={cropUrl}
+                fileName={cropFile.name}
+                mimeType={cropFile.type}
+                applyLabel="Use this crop"
+                onApply={(file) => {
+                  setFinalFile(file)
+                  closeCropper()
+                }}
+                onSkip={() => {
+                  setFinalFile(cropFile)
+                  closeCropper()
+                }}
+                onCancel={closeCropper}
+              />
+            ) : (
             <form onSubmit={handleUploadImage} className="flex flex-col items-center justify-center gap-4">
               {previewImage ? (
-                <div className="relative w-48 h-48 mb-2 border border-gray-200 rounded-2xl overflow-hidden shadow-inner group cursor-pointer">
-                  <label className="cursor-pointer w-full h-full block">
-                    <img src={previewImage} alt="Image preview" className="object-cover w-full h-full" />
-                    <input type="file" name="imageFile" accept="image/*" className="hidden" onChange={handleImageChange} />
-                  </label>
+                <div className="flex flex-col items-center gap-2 mb-2">
+                  <div className="relative w-48 h-48 border border-gray-200 rounded-2xl overflow-hidden shadow-inner">
+                    <img src={previewImage} alt="Image preview" className="object-contain bg-gray-100 w-full h-full" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" className="rounded-full px-4 text-gray-700" onClick={() => selectedFile && openCropper(selectedFile)}>
+                      Crop / Resize
+                    </Button>
+                    <label className="inline-flex items-center cursor-pointer rounded-full border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition">
+                      Change image
+                      <input type="file" name="imageFile" accept="image/*" className="hidden" onChange={handleImageChange} />
+                    </label>
+                  </div>
                 </div>
               ) : (
                 <div className="relative w-full h-40 mb-2 border-2 border-dashed border-sky-300 rounded-2xl bg-sky-50/50 hover:bg-sky-50 flex items-center justify-center transition cursor-pointer">
                   <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
                     <span className="text-sm font-semibold text-sky-600">Select image</span>
-                    <span className="text-xs text-gray-400 mt-1">SVG, PNG, JPG or GIF</span>
-                    <input type="file" name="imageFile" accept="image/*" className="hidden" onChange={handleImageChange} required />
+                    <span className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP or GIF — you can crop &amp; resize next</span>
+                    <input type="file" name="imageFile" accept="image/*" className="hidden" onChange={handleImageChange} />
                   </label>
                 </div>
               )}
@@ -183,9 +244,18 @@ async function handleUploadImage(e: any) {
                 Upload image
               </Button>
             </form>
+            )}
           </DialogHeader>
         </DialogContent>
       </Dialog>
+      ) : authChecked && (
+        <Link
+          href="/login?redirect=%2F"
+          className="fixed bottom-8 right-8 bg-black hover:bg-gray-800 text-white px-6 py-4 rounded-full shadow-2xl font-medium flex items-center gap-2 z-50"
+        >
+          <span>Log in to upload</span>
+        </Link>
+      )}
     </div>
   )
 }

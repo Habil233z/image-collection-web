@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import api from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { safeRedirectPath } from "@/lib/auth"
 
 export default function Login() {
     const [emailOrUsername, setEmailOrUsername] = useState("")
@@ -19,13 +20,11 @@ async function clickLogin(e: React.FormEvent) {
     try {
         const response = await api.post("login", { emailOrUsername, password })
         console.log("SUCCESS! Response data:", response.data) // <-- Look at this in your F12 console
-        router.push("/")
         if (response.data && response.data.data) {
             localStorage.setItem("username", response.data.data)
         }
-        
-        // Uncomment this once you verify the data object in console
-        router.push("/")
+        const redirect = new URLSearchParams(window.location.search).get("redirect")
+        router.push(safeRedirectPath(redirect))
     } catch (err: any) {
         console.error("Login failed:", err)
         alert(err.response?.data?.message || "Login failed")

@@ -1,7 +1,9 @@
 "use client"
 
 import Header from "@/components/header"
+import ImageCropper from "@/components/image-cropper"
 import api from "@/lib/api"
+import { getStoredUsername, loginUrl } from "@/lib/auth"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -18,6 +20,11 @@ export default function EditImage() {
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
+    // crop / resize state: the file (or existing image) currently open in the cropper
+    const [cropSource, setCropSource] = useState<{ url: string; name: string; type: string } | null>(null)
+    const [loadingCrop, setLoadingCrop] = useState<boolean>(false)
+    const [saving, setSaving] = useState<boolean>(false)
+
     async function getImageDetail(targetId: any) {
         try {
             const response = await api.get(`image/${targetId}`)
@@ -26,7 +33,7 @@ export default function EditImage() {
             setImageName(data.title)
             setCurrentImagePath(data.image_url)
             
-            const storedUser = localStorage.getItem("username")
+            const storedUser = getStoredUsername()
             if (storedUser !== data.username) {
                 router.push(`/image/${targetId}`)
             }
@@ -35,13 +42,46 @@ export default function EditImage() {
         }
     }
 
+    function closeCropper() {
+        if (cropSource) URL.revokeObjectURL(cropSource.url)
+        setCropSource(null)
+    }
+
     const handleImageChange = (e: any) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0]
-            setImageFile(file)
-            setPreviewUrl(URL.createObjectURL(file))
+            e.target.value = ""
+            // open the cropper right away so the new image can be cropped / resized
+            setCropSource({ url: URL.createObjectURL(file), name: file.name, type: file.type })
         }
     };
+
+    // crop / resize the image that is already stored
+    async function cropCurrentImage() {
+        if (!currentImagePath) return
+        setLoadingCrop(true)
+        try {
+            const res = await fetch(currentImagePath, { mode: "cors" })
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            const blob = await res.blob()
+            const fileName = currentImagePath.split("/").pop()?.split("?")[0] || "image"
+            setCropSource({ url: URL.createObjectURL(blob), name: fileName, type: blob.type })
+        } catch (err) {
+            console.error("Could not load current image for editing:", err)
+            alert("Could not load the current image for editing. Try picking the image file again instead.")
+        } finally {
+            setLoadingCrop(false)
+        }
+    }
+
+    function handleCropApplied(file: File) {
+        setImageFile(file)
+        setPreviewUrl((old) => {
+            if (old) URL.revokeObjectURL(old)
+            return URL.createObjectURL(file)
+        })
+        closeCropper()
+    }
 
     const handleSubmit = async (e: any) => {
         e.preventDefault()
@@ -51,20 +91,29 @@ export default function EditImage() {
             formData.append("imageFile", imageFile)
         }
         try {
+            setSaving(true)
             await api.patch(`api/image/${id}`, formData, {headers: {"Content-Type": undefined}})
 
             router.push(`/image/${id}`)
         } catch (err: any) {
             console.error("Error updating image:", err)
+            alert(err.response?.data?.error || "Failed to update image")
+            setSaving(false)
         }
     };
 
     useEffect(() => {
-        const storedUsername = localStorage.getItem("username")
+        const storedUsername = getStoredUsername()
         setUsername(storedUsername)
+        if (!storedUsername) {
+            // guests cannot edit
+            router.replace(loginUrl(`/image/${id}/edit`))
+            return
+        }
         if (id) {
             getImageDetail(id)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     return (
@@ -74,10 +123,22 @@ export default function EditImage() {
             <main className="flex-1 w-full max-w-xl mx-auto px-4 flex flex-col items-center justify-center">
                 <Card className="w-full shadow-2xl rounded-3xl border border-white/60 bg-white/90 backdrop-blur-md p-6 sm:p-8">
                     <CardHeader className="space-y-2 pb-6 text-center">
-                        <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Edit Image</CardTitle>
+                        <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+                            {cropSource ? "Crop & Resize" : "Edit Image"}
+                        </CardTitle>
                     </CardHeader>
 
                     <CardContent>
+                        {cropSource ? (
+                            <ImageCropper
+                                src={cropSource.url}
+                                fileName={cropSource.name}
+                                mimeType={cropSource.type}
+                                applyLabel="Use this crop"
+                                onApply={handleCropApplied}
+                                onCancel={closeCropper}
+                            />
+                        ) : (
                         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-600">Image Name</label>
@@ -91,16 +152,38 @@ export default function EditImage() {
                             </div>
 
                             <div className="flex flex-col w-full justify-center items-center space-y-2">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 self-start">Image (Click to change)</label>
-                                <label className="cursor-pointer w-full flex flex-col items-center justify-center border-2 border-dashed border-sky-300 rounded-2xl bg-sky-50/50 hover:bg-sky-50 p-4 transition group">
+                                <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 self-start">Image</label>
+                                <div className="w-full flex flex-col items-center justify-center border-2 border-dashed border-sky-300 rounded-2xl bg-sky-50/50 p-4">
                                     <img 
                                         src={previewUrl || currentImagePath || "test"} 
-                                        className="max-h-72 w-auto object-contain rounded-xl shadow-xs group-hover:scale-[1.02] transition" 
+                                        className="max-h-72 w-auto object-contain rounded-xl shadow-xs" 
                                         alt="Preview"
                                     />
-                                    <span className="text-xs text-sky-600 font-semibold mt-3">Click image to replace</span>
-                                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden"/>
-                                </label>
+                                    {imageFile && (
+                                        <span className="text-xs text-emerald-600 font-semibold mt-3">New image ready — it will replace the current one when you save</span>
+                                    )}
+                                    <div className="flex flex-wrap justify-center gap-2 mt-3">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            disabled={loadingCrop}
+                                            onClick={() => {
+                                                if (imageFile && previewUrl) {
+                                                    setCropSource({ url: URL.createObjectURL(imageFile), name: imageFile.name, type: imageFile.type })
+                                                } else {
+                                                    cropCurrentImage()
+                                                }
+                                            }}
+                                            className="rounded-full px-4 text-gray-700"
+                                        >
+                                            {loadingCrop ? "Loading..." : "Crop / Resize"}
+                                        </Button>
+                                        <label className="inline-flex items-center cursor-pointer rounded-full border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition">
+                                            Replace image
+                                            <input type="file" accept="image/*" onChange={handleImageChange} className="hidden"/>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="flex gap-4 mt-2">
@@ -114,12 +197,14 @@ export default function EditImage() {
                                 </Button>
                                 <Button 
                                     type="submit" 
-                                    className="flex-1 bg-neutral-900 hover:bg-black text-white font-medium py-3 rounded-full transition shadow-lg text-base"
+                                    disabled={saving}
+                                    className="flex-1 bg-neutral-900 hover:bg-black text-white font-medium py-3 rounded-full transition shadow-lg text-base disabled:opacity-50"
                                 >
-                                    Save Changes
+                                    {saving ? "Saving..." : "Save Changes"}
                                 </Button>
                             </div>
                         </form>
+                        )}
                     </CardContent>
                 </Card>
             </main>

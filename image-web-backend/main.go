@@ -109,6 +109,7 @@ func init() {
 		api.DELETE("/image/:id", imageHandlers.DeleteImage)
 
 		api.POST("/image/:id/like", likeHandlers.ToggleLike)
+		api.GET("/liked-images", likeHandlers.GetLikedImages)
 
 		api.POST("/image/:id/comments", commentHandlers.PostComment)
 		api.PATCH("/image/:id/comment/:commentId", commentHandlers.EditComment)
