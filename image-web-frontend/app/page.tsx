@@ -145,7 +145,6 @@ export default function Home() {
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900">
             Discover <span className="bg-linear-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">images</span>
           </h2>
-          <p className="mt-2 text-gray-600">Every picture keeps its own shape. Tap one to see it up close.</p>
         </section>
 
         {loading && (
