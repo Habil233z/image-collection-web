@@ -65,6 +65,9 @@ export default function Header({ username }: HeaderProps) {
         <div className="h-10 w-32" />
       ) : currentUser ? (
         <div className="flex items-center gap-2 sm:gap-4">
+          <Link href="/chat" className="hidden sm:flex items-center gap-1.5 font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition">
+            <span aria-hidden>💬</span> Messages
+          </Link>
           <Link href="/liked" className="hidden sm:flex items-center gap-1.5 font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition">
             <span aria-hidden>♥</span> Liked
           </Link>
@@ -73,7 +76,6 @@ export default function Header({ username }: HeaderProps) {
               <div className="flex items-center gap-3 bg-white/15 hover:bg-white/25 border border-white/30 pl-4 pr-1.5 py-1 rounded-full transition text-white">
                 <span className="hidden sm:block text-base font-semibold text-white max-w-32 truncate">{currentUser}</span>
                 <div className="h-10 w-10 rounded-full overflow-hidden bg-white ring-2 ring-white/70">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     className="h-full w-full object-cover"
                     src={avatar || "/user.png"}
@@ -89,6 +91,11 @@ export default function Header({ username }: HeaderProps) {
                 <Link href="/liked">
                   <DropdownMenuItem className="cursor-pointer font-medium rounded-xl px-3 py-2 focus:bg-sky-50 focus:text-sky-600 transition text-gray-800">
                     Liked Images
+                  </DropdownMenuItem>
+                </Link>
+                <Link href="/chat">
+                  <DropdownMenuItem className="cursor-pointer font-medium rounded-xl px-3 py-2 focus:bg-sky-50 focus:text-sky-600 transition text-gray-800">
+                    Messages
                   </DropdownMenuItem>
                 </Link>
                 <Link href="/profile">

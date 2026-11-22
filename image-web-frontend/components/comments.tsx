@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { getStoredAvatar } from "@/lib/auth";
 import Replies from "@/components/replies";
+import Link from "next/link";
 
 interface CommentItemProps {
     commentItem: any;
@@ -209,7 +210,11 @@ export default function Comments({
                     </div>
                     <div>
                         <div className="flex justify-between w-full">
-                            <h3 className="text-base font-semibold text-gray-900">{commentItem.username}</h3>
+                            {commentItem.user_id ? (
+                                <Link href={`/user/${commentItem.user_id}`} className="text-base font-semibold text-gray-900 hover:text-sky-600 transition">{commentItem.username}</Link>
+                            ) : (
+                                <h3 className="text-base font-semibold text-gray-900">{commentItem.username}</h3>
+                            )}
                             <p className="text-gray-400 ml-4">{commentItem.pending ? "Sending…" : new Date(commentItem.created_at).toLocaleDateString()}</p>
                         </div>
                         <p className="text-gray-600 break-all mt-1 text-sm sm:text-base">{commentItem.comment}</p>

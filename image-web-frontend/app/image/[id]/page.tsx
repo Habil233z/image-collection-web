@@ -192,15 +192,17 @@ export default function ImageDetail() {
 
                             <div className="flex flex-wrap justify-between items-center gap-4 w-full px-1 text-gray-600 border-t border-gray-200/70 pt-4">
                                 <div className="flex items-center gap-3">
+                                    <Link href={username === imageDetail.username ? "/profile" : `/user/${imageDetail.user_id}`} className="shrink-0">
                                     <img
                                         src={imageDetail.avatar_url || "/user.png"}
                                         onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png"; }}
                                         alt={imageDetail.username}
                                         className="h-11 w-11 rounded-full object-cover bg-white ring-2 ring-white shadow-md"
                                     />
+                                    </Link>
                                     <div className="leading-tight">
                                         <p className="text-base sm:text-lg font-medium text-gray-700">
-                                            Created by <span className="font-semibold text-sky-600">{imageDetail.username}{username === imageDetail.username ? " (You)" : ""}</span>
+                                            Created by <Link href={username === imageDetail.username ? "/profile" : `/user/${imageDetail.user_id}`} className="font-semibold text-sky-600 hover:underline">{imageDetail.username}{username === imageDetail.username ? " (You)" : ""}</Link>
                                         </p>
                                         <p className="text-xs sm:text-sm font-light text-gray-400">{new Date(imageDetail.created_at).toLocaleDateString()}</p>
                                     </div>

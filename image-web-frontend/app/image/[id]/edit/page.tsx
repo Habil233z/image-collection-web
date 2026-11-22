@@ -54,7 +54,6 @@ export default function EditImage() {
         }
     };
 
-    // crop / resize the image that is already stored
     async function cropCurrentImage() {
         if (!currentImagePath) return
         setLoadingCrop(true)

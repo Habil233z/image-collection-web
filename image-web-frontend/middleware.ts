@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Browsing (home, image pages) is open to guests. Only pages that need a
-// user account are gated here.
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("image-web-auth_token");
 
@@ -16,5 +14,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/profile/:path*", "/liked/:path*", "/image/:id/edit"],
+  matcher: ["/profile/:path*", "/liked/:path*", "/chat/:path*", "/image/:id/edit"],
 };

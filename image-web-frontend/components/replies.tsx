@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import Link from "next/link";
 
 interface ReplyItemProps {
     replyItem: any;
@@ -121,7 +122,11 @@ async function getReplyLike() {
                             </div>
                             <div>
                                 <div className="flex justify-between w-full">
-                                    <h3 className="text-sm font-semibold text-gray-900">{replyItem.username}</h3>
+                                    {replyItem.user_id ? (
+                                        <Link href={`/user/${replyItem.user_id}`} className="text-sm font-semibold text-gray-900 hover:text-sky-600 transition">{replyItem.username}</Link>
+                                    ) : (
+                                        <h3 className="text-sm font-semibold text-gray-900">{replyItem.username}</h3>
+                                    )}
                                     <p className="text-gray-400 ml-4 text-xs">{replyItem.pending ? "Sending…" : new Date(replyItem.created_at).toLocaleDateString()}</p>
                                 </div>
                                 <p className="text-gray-600 break-all mt-1 text-xs sm:text-sm">{replyItem.reply}</p>
@@ -212,7 +217,11 @@ async function getReplyLike() {
                             <div className="text-right">
                                 <div className="flex justify-between w-full">
                                     <p className="text-gray-400 mr-4 text-xs">{replyItem.pending ? "Sending…" : new Date(replyItem.created_at).toLocaleDateString()}</p>
-                                    <h3 className="text-sm font-semibold text-gray-900">{replyItem.username}</h3>
+                                    {replyItem.user_id ? (
+                                        <Link href={`/user/${replyItem.user_id}`} className="text-sm font-semibold text-gray-900 hover:text-sky-600 transition">{replyItem.username}</Link>
+                                    ) : (
+                                        <h3 className="text-sm font-semibold text-gray-900">{replyItem.username}</h3>
+                                    )}
                                 </div>
                                 <p className="text-gray-600 break-all mt-1 text-xs sm:text-sm text-right">{replyItem.reply}</p>
                             </div>
