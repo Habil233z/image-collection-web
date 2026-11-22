@@ -167,6 +167,7 @@ export default function Comments({
             reply: reply,
             username: username || "You",
             created_at: new Date().toISOString(),
+            pending: true,
         };
 
         setReplies((prevReplies) => [...prevReplies, optimisticReply]);
@@ -191,13 +192,14 @@ export default function Comments({
     }
 
     useEffect(() => {
+        if (commentItem.pending) return;
         getLike();
         getReplyCount();
     }, []);
 
     return (
         <>
-        <div id={commentItem.id} key={commentItem.id} className="bg-white/80 backdrop-blur-xs rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm transition hover:shadow-md flex flex-col justify-between self-start">
+        <div id={commentItem.id} key={commentItem.id} className={`bg-white/80 backdrop-blur-xs rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm transition hover:shadow-md flex flex-col justify-between self-start${commentItem.pending ? " shimmer opacity-60 pointer-events-none select-none" : ""}`}>
             <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
@@ -206,7 +208,7 @@ export default function Comments({
                     <div>
                         <div className="flex justify-between w-full">
                             <h3 className="text-base font-semibold text-gray-900">{commentItem.username}</h3>
-                            <p className="text-gray-400 ml-4">{new Date(commentItem.created_at).toLocaleDateString()}</p>
+                            <p className="text-gray-400 ml-4">{commentItem.pending ? "Sending…" : new Date(commentItem.created_at).toLocaleDateString()}</p>
                         </div>
                         <p className="text-gray-600 break-all mt-1 text-sm sm:text-base">{commentItem.comment}</p>
                     </div>

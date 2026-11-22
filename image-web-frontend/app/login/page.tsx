@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import api from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { safeRedirectPath } from "@/lib/auth"
+import { clearSession, safeRedirectPath } from "@/lib/auth"
 
 export default function Login() {
     const [emailOrUsername, setEmailOrUsername] = useState("")
@@ -19,7 +19,7 @@ async function clickLogin(e: React.FormEvent) {
     
     try {
         const response = await api.post("login", { emailOrUsername, password })
-        console.log("SUCCESS! Response data:", response.data) // <-- Look at this in your F12 console
+        clearSession()
         if (response.data && response.data.data) {
             localStorage.setItem("username", response.data.data)
         }
@@ -32,8 +32,8 @@ async function clickLogin(e: React.FormEvent) {
 }
 
     return (
-        <div className="w-screen h-screen bg-linear-to-br from-sky-200 via-sky-300 to-blue-400 flex flex-col items-center justify-center px-4">
-            <Card className="w-full max-w-md shadow-2xl rounded-3xl border border-white/60 bg-white/90 backdrop-blur-md p-6 sm:p-8">
+        <div className="page-bg-deep min-h-screen w-full flex flex-col items-center justify-center px-4">
+            <Card className="w-full max-w-md glass-card rounded-3xl tile-in p-6 sm:p-8">
                 <CardHeader className="space-y-3 pb-6 text-center">
                     <div className="mx-auto w-12 h-12 p-2 rounded-full bg-sky-100 flex items-center justify-center shadow-inner text-sky-600 font-bold text-lg">
                         <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none">
@@ -52,7 +52,7 @@ async function clickLogin(e: React.FormEvent) {
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider text-gray-600">Email or Username</label>
                             <input 
-                                className="w-full text-black border border-gray-200 rounded-xl text-sm sm:text-base px-4 py-3 bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 transition" 
+                                className="field text-sm sm:text-base" 
                                 type="text" 
                                 placeholder="email or username" 
                                 minLength={5} 
@@ -67,7 +67,7 @@ async function clickLogin(e: React.FormEvent) {
                                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-600">Password</label>
                             </div>
                             <input 
-                                className="w-full text-black border border-gray-200 rounded-xl text-sm sm:text-base px-4 py-3 bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 transition" 
+                                className="field text-sm sm:text-base" 
                                 type="password" 
                                 placeholder="password" 
                                 minLength={8} 

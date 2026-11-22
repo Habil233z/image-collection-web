@@ -19,13 +19,14 @@ func (d *Database) ImageDetail(c *gin.Context) {
 	images.title, 
 	images.image_url, 
 	images.created_at,
-	users.username
+	users.username,
+	COALESCE(users.avatar_url, '')
 	
 	FROM images
 	JOIN users on images.user_id = users.id
 	WHERE images.id = $1`
 	var img Image
-	err := d.DB.Pool.QueryRow(c.Request.Context(), query, imageID).Scan(&img.ID, &img.UserID, &img.Title, &img.ImageURL, &img.CreatedAt, &img.Username)
+	err := d.DB.Pool.QueryRow(c.Request.Context(), query, imageID).Scan(&img.ID, &img.UserID, &img.Title, &img.ImageURL, &img.CreatedAt, &img.Username, &img.AvatarURL)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
 		return

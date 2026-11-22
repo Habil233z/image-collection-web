@@ -30,7 +30,7 @@ func (d *Database) Profile(c *gin.Context) {
 	}
 	Id := int(idFloat)
 
-	err := d.DB.Pool.QueryRow(c.Request.Context(), "SELECT email, username FROM users WHERE id = $1", Id).Scan(&user.Email, &user.Username)
+	err := d.DB.Pool.QueryRow(c.Request.Context(), "SELECT email, username, COALESCE(avatar_url, '') FROM users WHERE id = $1", Id).Scan(&user.Email, &user.Username, &user.AvatarURL)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{

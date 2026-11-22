@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import api from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { clearSession } from "@/lib/auth"
 
 export default function Register() {
     const [email, setEmail] = useState("")
@@ -21,6 +22,7 @@ export default function Register() {
         } else {
             try {
                 const response = await api.post("register", { email, username, password })
+                clearSession()
                 localStorage.setItem("username", response.data.data)
                 router.push("/")
             } catch {
@@ -30,8 +32,8 @@ export default function Register() {
     }
 
     return (
-        <div className="w-screen h-screen bg-linear-to-br from-sky-200 via-sky-300 to-blue-400 flex flex-col items-center justify-center px-4 overflow-y-auto py-6">
-            <Card className="w-full max-w-md shadow-2xl rounded-3xl border border-white/60 bg-white/90 backdrop-blur-md p-6 sm:p-8 my-auto">
+        <div className="page-bg-deep min-h-screen w-full flex flex-col items-center justify-center px-4 overflow-y-auto py-6">
+            <Card className="w-full max-w-md glass-card rounded-3xl tile-in p-6 sm:p-8 my-auto">
                 <CardHeader className="space-y-3 pb-6 text-center">
                     <div className="mx-auto w-12 h-12 p-2 rounded-full bg-sky-100 flex items-center justify-center shadow-inner text-sky-600 font-bold text-lg">
                         <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none">
@@ -48,7 +50,7 @@ export default function Register() {
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider text-gray-600">Email</label>
                             <input 
-                                className="w-full text-black border border-gray-200 rounded-xl text-sm sm:text-base px-4 py-3 bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 transition" 
+                                className="field text-sm sm:text-base" 
                                 type="email" 
                                 placeholder="email@gmail.com" 
                                 required 
@@ -60,7 +62,7 @@ export default function Register() {
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider text-gray-600">Username</label>
                             <input 
-                                className="w-full text-black border border-gray-200 rounded-xl text-sm sm:text-base px-4 py-3 bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 transition" 
+                                className="field text-sm sm:text-base" 
                                 type="text" 
                                 placeholder="At least 5 characters" 
                                 minLength={5} 
@@ -73,7 +75,7 @@ export default function Register() {
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider text-gray-600">Password</label>
                             <input 
-                                className="w-full text-black border border-gray-200 rounded-xl text-sm sm:text-base px-4 py-3 bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 transition" 
+                                className="field text-sm sm:text-base" 
                                 type="password" 
                                 placeholder="At least 8 characters" 
                                 minLength={8} 

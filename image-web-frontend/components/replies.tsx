@@ -105,6 +105,7 @@ async function getReplyLike() {
     }
 
     useEffect(() => {
+        if (replyItem.pending) return;
         getReplyLike();
     }, [replyItem.id]);
 
@@ -112,7 +113,7 @@ async function getReplyLike() {
         <>
             
                 {isOwner ? (
-                    <div id={replyItem.id} className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 mr-10">
+                    <div id={replyItem.id} className={`bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 mr-10${replyItem.pending ? " shimmer opacity-60 pointer-events-none select-none" : ""}`}>
                     <div className="flex">
                         <div className="flex gap-4">
                             <div className="w-10 h-10 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
@@ -121,7 +122,7 @@ async function getReplyLike() {
                             <div>
                                 <div className="flex justify-between w-full">
                                     <h3 className="text-sm font-semibold text-gray-900">{replyItem.username}</h3>
-                                    <p className="text-gray-400 ml-4 text-xs">{new Date(replyItem.created_at).toLocaleDateString()}</p>
+                                    <p className="text-gray-400 ml-4 text-xs">{replyItem.pending ? "Sending…" : new Date(replyItem.created_at).toLocaleDateString()}</p>
                                 </div>
                                 <p className="text-gray-600 break-all mt-1 text-xs sm:text-sm">{replyItem.reply}</p>
                             </div>
@@ -172,7 +173,7 @@ async function getReplyLike() {
                     </div>
                 </div>
                 ) : (
-                <div id={replyItem.id} className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 ml-10">
+                <div id={replyItem.id} className={`bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 ml-10${replyItem.pending ? " shimmer opacity-60 pointer-events-none select-none" : ""}`}>
                     <div className="flex items-start justify-between">
                         <div className="flex flex-col items-end gap-1">
                             {username === replyItem.username && (
@@ -210,7 +211,7 @@ async function getReplyLike() {
                         <div className="flex items-start gap-4">
                             <div className="text-right">
                                 <div className="flex justify-between w-full">
-                                    <p className="text-gray-400 mr-4 text-xs">{new Date(replyItem.created_at).toLocaleDateString()}</p>
+                                    <p className="text-gray-400 mr-4 text-xs">{replyItem.pending ? "Sending…" : new Date(replyItem.created_at).toLocaleDateString()}</p>
                                     <h3 className="text-sm font-semibold text-gray-900">{replyItem.username}</h3>
                                 </div>
                                 <p className="text-gray-600 break-all mt-1 text-xs sm:text-sm text-right">{replyItem.reply}</p>

@@ -18,6 +18,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Comments from "@/components/comments";
 import { getStoredUsername, loginUrl } from "@/lib/auth";
+import { downloadImage } from "@/lib/download";
+import { usePageTitle } from "@/lib/usePageTitle";
 
 export default function ImageDetail() {
     const params = useParams()
@@ -30,6 +32,11 @@ export default function ImageDetail() {
     const [liked, setLiked] = useState<boolean>(false)
     const [comment, setComment] = useState<string>("")
     const [comments, setComments] = useState<any[]>([])
+
+    const [downloading, setDownloading] = useState<boolean>(false)
+
+    // tab title follows the image once it is loaded
+    usePageTitle(imageDetail?.title)
 
     const [page, setPage] = useState<number>(1)
     const [hasMore, setHasMore] = useState<boolean>(true)
@@ -53,6 +60,16 @@ export default function ImageDetail() {
         } catch (error: any) {
             console.error("Error deleting image:", error)
             alert(error.response?.data?.error || "Failed to delete image.")
+        }
+    }
+
+    async function handleDownload() {
+        if (!imageDetail || downloading) return
+        setDownloading(true)
+        try {
+            await downloadImage(imageDetail.image_url, imageDetail.title)
+        } finally {
+            setDownloading(false)
         }
     }
 
@@ -111,6 +128,7 @@ export default function ImageDetail() {
             comment: comment,
             username: username || "You",
             created_at: new Date().toISOString(),
+            pending: true, // rendered as a ghost until the server copy replaces it
         }
 
         setComments((prev) => [optimisticComment, ...prev])
@@ -161,68 +179,88 @@ export default function ImageDetail() {
     //Test
 
     return (
-        <div className="min-h-screen w-full bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col pb-16">
+        <div className="page-bg min-h-screen w-full flex flex-col pb-16">
             <Header username={username} />
 
             <main className="flex-1 w-full px-6 sm:px-12 flex flex-col items-center">
                 {imageDetail && (
-                    <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-6 sm:p-8 w-full max-w-6xl border border-white/60 flex flex-col items-center mb-8">
-                        <h2 className="text-3xl sm:text-5xl font-bold text-center text-gray-900 mb-6">{imageDetail.title}</h2>
+                    <div className="glass-card tile-in rounded-3xl p-5 sm:p-8 w-full max-w-6xl flex flex-col items-center mb-8">
+                        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-center text-gray-900 mb-6">{imageDetail.title}</h2>
                         <div className="w-full flex flex-col items-center">
+                            {/* natural size: the image is never stretched, only limited to the viewport height */}
                             <img 
                                 src={`${imageDetail.image_url}`} 
-                                className="max-h-150 w-auto rounded-2xl object-contain shadow-md mb-6" 
+                                className="max-h-150 max-w-full w-auto h-auto rounded-2xl object-contain shadow-xl shadow-sky-900/20 mb-6" 
                                 alt={imageDetail.title}
-                            />  
-                            {username === imageDetail.username ? (
-                                <div className="flex justify-between items-center w-full px-2 mt-2 text-gray-600 border-t border-gray-100 pt-4">
-                                    <h2 className="text-base sm:text-lg font-medium text-gray-700">Created by <span className="font-semibold text-sky-600">{imageDetail.username} (You)</span></h2>
-                                    <div className="flex items-center">
-                                    <p className="text-xs sm:text-sm font-light text-gray-400 mr-2">Created at: {new Date(imageDetail.created_at).toLocaleDateString()}</p>
-                                    <div className="flex w-full justify-center">
-                                        <h2>{likesCount}</h2>
-                                        {liked ? (
-                                            <svg onClick={() => handleLike()} className="cursor-pointer" width="36" height="36" viewBox="0 0 48 48" ><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                                        ):(
-                                            <svg onClick={() => handleLike()} className="cursor-pointer" width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
-                                        )}
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger className="focus:outline-none">
-                                            <div className="font-bold text-lg cursor-pointer w-10 h-10 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 transition shadow-xs">
-                                                ⋮
-                                            </div>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-36 rounded-2xl p-1 shadow-xl bg-white/95 backdrop-blur-md border border-white/80">
-                                            <DropdownMenuGroup>
-                                                <DropdownMenuLabel className="text-xs uppercase tracking-wider text-gray-400 px-2 py-1">Image</DropdownMenuLabel>
-                                                <Link href={`/image/${imageDetail.id}/edit`}>
-                                                    <DropdownMenuItem className="cursor-pointer font-medium rounded-xl px-3 py-1.5 focus:bg-sky-50 focus:text-sky-600 transition">Edit</DropdownMenuItem>
-                                                </Link>
-                                            </DropdownMenuGroup>
-                                            <DropdownMenuSeparator className="my-1 border-gray-100" />
-                                            <DropdownMenuGroup>
-                                                <DropdownMenuItem onClick={handleDeleteImage} className="cursor-pointer text-red-600 font-medium rounded-xl px-3 py-1.5 focus:bg-red-50 focus:text-red-700 transition">Delete</DropdownMenuItem>
-                                            </DropdownMenuGroup>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                            />
+
+                            <div className="flex flex-wrap justify-between items-center gap-4 w-full px-1 text-gray-600 border-t border-gray-200/70 pt-4">
+                                {/* author */}
+                                <div className="flex items-center gap-3">
+                                    <img
+                                        src={imageDetail.avatar_url || "/user.png"}
+                                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png"; }}
+                                        alt={imageDetail.username}
+                                        className="h-11 w-11 rounded-full object-cover bg-white ring-2 ring-white shadow-md"
+                                    />
+                                    <div className="leading-tight">
+                                        <p className="text-base sm:text-lg font-medium text-gray-700">
+                                            Created by <span className="font-semibold text-sky-600">{imageDetail.username}{username === imageDetail.username ? " (You)" : ""}</span>
+                                        </p>
+                                        <p className="text-xs sm:text-sm font-light text-gray-400">{new Date(imageDetail.created_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="flex w-full justify-between items-center px-2 mt-2 text-gray-600 border-t border-gray-100 pt-4">
-                                    <h2 className="text-base sm:text-lg font-medium text-gray-700">Created by <span className="font-semibold text-sky-600">{imageDetail.username}</span></h2>
-                                    <div className="flex items-center">
-                                        <p className="text-xs sm:text-sm font-light text-gray-400 mr-4">Created at: {new Date(imageDetail.created_at).toLocaleDateString()}</p>
-                                        <h2>{likesCount}</h2>
+
+                                {/* actions */}
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        onClick={handleDownload}
+                                        disabled={downloading}
+                                        className="rounded-full bg-neutral-900 hover:bg-black text-white px-5 py-2 shadow-md gap-2 disabled:opacity-60"
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="m7 11 5 5 5-5" /><path d="M5 21h14" /></svg>
+                                        {downloading ? "Downloading..." : "Download"}
+                                    </Button>
+
+                                    <div className="flex items-center gap-1 bg-white/70 rounded-full pl-3 pr-2 py-1 border border-white shadow-xs">
+                                        <h2 className="font-semibold">{likesCount}</h2>
                                         {liked ? (
-                                            <svg onClick={() => handleLike()} className="cursor-pointer" width="36" height="36" viewBox="0 0 48 48" ><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                                            <svg onClick={() => handleLike()} className="cursor-pointer hover:scale-110 transition" width="36" height="36" viewBox="0 0 48 48" ><path fill="#E11A45" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
                                         ):(
-                                            <svg onClick={() => handleLike()} className="cursor-pointer" width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
+                                            <svg onClick={() => handleLike()} className="cursor-pointer hover:scale-110 transition" width="32" height="32" viewBox="0 0 48 48"><path fill="none" stroke="#1f2937" d="m43,17.0766c0-5.6539-4.5835-10.2373-10.2374-10.2373-3.7223,0-6.9708,1.9932-8.7626,4.964-1.7919-2.9708-5.0403-4.964-8.7626-4.964-5.6539,0-10.2373,4.5834-10.2373,10.2373,0,1.2925.2496,2.524.6866,3.6627,3.3851,9.7368,18.3134,20.4215,18.3134,20.4215,0,0,14.9282-10.6847,18.3134-20.4215.437-1.1386.6867-2.3702.6867-3.6627Z" /></svg>
                                         )}
                                     </div>
+
+                                    {username === imageDetail.username && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger className="focus:outline-none">
+                                                <div className="font-bold text-lg cursor-pointer w-10 h-10 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 transition shadow-xs">
+                                                    ⋮
+                                                </div>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-36 rounded-2xl p-1 shadow-xl bg-white/95 backdrop-blur-md border border-white/80">
+                                                <DropdownMenuGroup>
+                                                    <DropdownMenuLabel className="text-xs uppercase tracking-wider text-gray-400 px-2 py-1">Image</DropdownMenuLabel>
+                                                    <Link href={`/image/${imageDetail.id}/edit`}>
+                                                        <DropdownMenuItem className="cursor-pointer font-medium rounded-xl px-3 py-1.5 focus:bg-sky-50 focus:text-sky-600 transition">Edit</DropdownMenuItem>
+                                                    </Link>
+                                                </DropdownMenuGroup>
+                                                <DropdownMenuSeparator className="my-1 border-gray-100" />
+                                                <DropdownMenuGroup>
+                                                    <DropdownMenuItem onClick={handleDeleteImage} className="cursor-pointer text-red-600 font-medium rounded-xl px-3 py-1.5 focus:bg-red-50 focus:text-red-700 transition">Delete</DropdownMenuItem>
+                                                </DropdownMenuGroup>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )}
                                 </div>
-                            )}
+                            </div>
                         </div>
+                    </div>
+                )}
+
+                {!imageDetail && (
+                    <div className="w-full max-w-6xl mb-8" aria-busy="true">
+                        <div className="skeleton rounded-3xl h-[60vh]" />
                     </div>
                 )}
 

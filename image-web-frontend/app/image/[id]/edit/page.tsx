@@ -20,7 +20,6 @@ export default function EditImage() {
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
-    // crop / resize state: the file (or existing image) currently open in the cropper
     const [cropSource, setCropSource] = useState<{ url: string; name: string; type: string } | null>(null)
     const [loadingCrop, setLoadingCrop] = useState<boolean>(false)
     const [saving, setSaving] = useState<boolean>(false)
@@ -51,7 +50,6 @@ export default function EditImage() {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0]
             e.target.value = ""
-            // open the cropper right away so the new image can be cropped / resized
             setCropSource({ url: URL.createObjectURL(file), name: file.name, type: file.type })
         }
     };
@@ -106,22 +104,20 @@ export default function EditImage() {
         const storedUsername = getStoredUsername()
         setUsername(storedUsername)
         if (!storedUsername) {
-            // guests cannot edit
             router.replace(loginUrl(`/image/${id}/edit`))
             return
         }
         if (id) {
             getImageDetail(id)
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     return (
-        <div className="min-h-screen w-screen bg-linear-to-br from-sky-100 via-sky-200 to-blue-300 flex flex-col pb-12">
+        <div className="page-bg min-h-screen w-full flex flex-col pb-12">
             <Header username={username} />
 
             <main className="flex-1 w-full max-w-xl mx-auto px-4 flex flex-col items-center justify-center">
-                <Card className="w-full shadow-2xl rounded-3xl border border-white/60 bg-white/90 backdrop-blur-md p-6 sm:p-8">
+                <Card className="w-full glass-card rounded-3xl tile-in p-6 sm:p-8">
                     <CardHeader className="space-y-2 pb-6 text-center">
                         <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
                             {cropSource ? "Crop & Resize" : "Edit Image"}
@@ -146,7 +142,7 @@ export default function EditImage() {
                                     type="text" 
                                     value={imageName} 
                                     onChange={(e) => setImageName(e.target.value)} 
-                                    className="w-full text-black border border-gray-200 rounded-xl text-base px-4 py-3 bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 transition" 
+                                    className="field text-base" 
                                     required
                                 />
                             </div>
@@ -154,11 +150,22 @@ export default function EditImage() {
                             <div className="flex flex-col w-full justify-center items-center space-y-2">
                                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-600 self-start">Image</label>
                                 <div className="w-full flex flex-col items-center justify-center border-2 border-dashed border-sky-300 rounded-2xl bg-sky-50/50 p-4">
-                                    <img 
-                                        src={previewUrl || currentImagePath || "test"} 
-                                        className="max-h-72 w-auto object-contain rounded-xl shadow-xs" 
-                                        alt="Preview"
-                                    />
+                                    <div className="relative rounded-xl overflow-hidden shadow-md">
+                                        <img 
+                                            src={previewUrl || currentImagePath || "test"} 
+                                            className={`block max-h-72 w-auto max-w-full object-contain transition ${saving ? "opacity-60 blur-[1px]" : ""}`} 
+                                            alt="Preview"
+                                        />
+                                        {saving && (
+                                            <>
+                                                <div className="shimmer absolute inset-0" />
+                                                <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-black/50 py-2 text-sm text-white">
+                                                    <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                                                    Saving...
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
                                     {imageFile && (
                                         <span className="text-xs text-emerald-600 font-semibold mt-3">New image ready — it will replace the current one when you save</span>
                                     )}

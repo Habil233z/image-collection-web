@@ -5,10 +5,13 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	storage_go "github.com/supabase-community/storage-go"
 )
 
 type Database struct {
-	DB *database.Postgres
+	DB             *database.Postgres
+	SupabaseClient *storage_go.Client
+	AvatarBucket   string
 }
 
 type User struct {

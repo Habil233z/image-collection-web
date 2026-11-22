@@ -3,30 +3,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 
-/**
- * Dependency-free image crop + resize editor.
- *
- * - Drag the box to move it, drag the handles to resize it.
- * - Pick an aspect ratio (Free / 1:1 / 4:3 / 3:4 / 16:9 / 9:16).
- * - Pick the output size (percent presets or exact width / height).
- * - "Apply" renders the result on a canvas and hands back a new File.
- */
-
 type Crop = { x: number; y: number; w: number; h: number } // natural-pixel coordinates
 type Dir = "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw"
 
 interface ImageCropperProps {
-    /** Object URL (blob:) or same-origin URL of the image to edit. */
     src: string
-    /** Original file name – used to name the output file. */
     fileName: string
-    /** Original mime type – used to pick the output format. */
     mimeType: string
     applyLabel?: string
     onApply: (file: File) => void
     onCancel: () => void
-    /** When provided, a "Use original" button is shown. */
     onSkip?: () => void
+    fixedAspect?: number
+    maxOutputSide?: number
+    round?: boolean
 }
 
 const ASPECTS: { label: string; value: number | null }[] = [
@@ -39,7 +29,7 @@ const ASPECTS: { label: string; value: number | null }[] = [
 ]
 
 const SCALE_PRESETS = [100, 75, 50, 25]
-const MAX_OUTPUT_SIDE = 4096
+const DEFAULT_MAX_OUTPUT_SIDE = 4096
 const MIN_CROP_DISPLAY_PX = 24
 
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max)
@@ -87,7 +77,7 @@ function computeResize(
     if (isCorner) {
         const sx = hasE ? 1 : -1
         const sy = hasS ? 1 : -1
-        const ax = sx > 0 ? start.x : start.x + start.w // fixed corner
+        const ax = sx > 0 ? start.x : start.x + start.w
         const ay = sy > 0 ? start.y : start.y + start.h
         const wFromX = start.w + sx * dx
         const wFromY = (start.h + sy * dy) * ratio
@@ -131,7 +121,6 @@ function computeResize(
 function fitRatio(ratio: number, nw: number, nh: number, around: Crop): Crop {
     let w = Math.min(around.w, around.h * ratio)
     let h = w / ratio
-    // If the current box is smaller than it could be in the other dimension, grow to fit the image.
     if (h > nh) {
         h = nh
         w = h * ratio
@@ -153,7 +142,6 @@ function fitRatio(ratio: number, nw: number, nh: number, around: Crop): Crop {
 function outputFormat(mimeType: string): { type: string; ext: string } {
     if (mimeType === "image/jpeg" || mimeType === "image/jpg") return { type: "image/jpeg", ext: "jpg" }
     if (mimeType === "image/webp") return { type: "image/webp", ext: "webp" }
-    // PNG, GIF, SVG, BMP, … -> PNG (lossless, supports transparency)
     return { type: "image/png", ext: "png" }
 }
 
@@ -176,6 +164,9 @@ export default function ImageCropper({
     onApply,
     onCancel,
     onSkip,
+    fixedAspect,
+    maxOutputSide = DEFAULT_MAX_OUTPUT_SIDE,
+    round = false,
 }: ImageCropperProps) {
     const imgRef = useRef<HTMLImageElement | null>(null)
     const stageRef = useRef<HTMLDivElement | null>(null)
@@ -184,9 +175,10 @@ export default function ImageCropper({
     const [natural, setNatural] = useState<{ w: number; h: number } | null>(null)
     const [displayWidth, setDisplayWidth] = useState<number>(0)
     const [crop, setCrop] = useState<Crop | null>(null)
-    const [aspect, setAspect] = useState<number | null>(null)
-    const [aspectLabel, setAspectLabel] = useState<string>("Free")
-    const [scale, setScale] = useState<number>(100) // output size as % of the cropped area
+    const initialAspect = fixedAspect ?? null
+    const [aspect, setAspect] = useState<number | null>(initialAspect)
+    const [aspectLabel, setAspectLabel] = useState<string>(fixedAspect ? "" : "Free")
+    const [scale, setScale] = useState<number>(100)
     const [loadError, setLoadError] = useState<boolean>(false)
     const [busy, setBusy] = useState<boolean>(false)
 
@@ -201,10 +193,10 @@ export default function ImageCropper({
         const img = imgRef.current
         if (!img) return
         setNatural({ w: img.naturalWidth, h: img.naturalHeight })
-        setCrop({ x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight })
+        setCrop(initialCrop(img.naturalWidth, img.naturalHeight))
         setScale(100)
-        setAspect(null)
-        setAspectLabel("Free")
+        setAspect(initialAspect)
+        setAspectLabel(fixedAspect ? "" : "Free")
         measure()
     }
 
@@ -223,10 +215,15 @@ export default function ImageCropper({
         setLoadError(false)
     }, [src])
 
-    const factor = natural && displayWidth ? displayWidth / natural.w : 0 // display px per natural px
+    function initialCrop(nw: number, nh: number): Crop {
+        const full = { x: 0, y: 0, w: nw, h: nh }
+        return fixedAspect ? fitRatio(fixedAspect, nw, nh, full) : full
+    }
+
+    const factor = natural && displayWidth ? displayWidth / natural.w : 0
 
     // ---- output size ----------------------------------------------------
-    const maxScale = crop ? Math.max(1, Math.floor((MAX_OUTPUT_SIDE / Math.max(crop.w, crop.h)) * 100)) : 100
+    const maxScale = crop ? Math.max(1, Math.floor((maxOutputSide / Math.max(crop.w, crop.h)) * 100)) : 100
     const effectiveScale = Math.min(scale, maxScale)
     const outW = crop ? Math.max(1, Math.round((crop.w * effectiveScale) / 100)) : 0
     const outH = crop ? Math.max(1, Math.round((crop.h * effectiveScale) / 100)) : 0
@@ -283,9 +280,9 @@ export default function ImageCropper({
 
     function resetCrop() {
         if (!natural) return
-        setCrop({ x: 0, y: 0, w: natural.w, h: natural.h })
-        setAspect(null)
-        setAspectLabel("Free")
+        setCrop(initialCrop(natural.w, natural.h))
+        setAspect(initialAspect)
+        setAspectLabel(fixedAspect ? "" : "Free")
         setScale(100)
     }
 
@@ -330,7 +327,6 @@ export default function ImageCropper({
 
     return (
         <div className="flex flex-col gap-4 w-full text-gray-800">
-            {/* Stage */}
             <div className="flex justify-center items-center bg-gray-900/90 rounded-2xl p-3 min-h-40">
                 {loadError ? (
                     <p className="text-sm text-red-300 py-10">Could not load this image for editing.</p>
@@ -343,7 +339,6 @@ export default function ImageCropper({
                         onPointerUp={handlePointerUp}
                         onPointerCancel={handlePointerUp}
                     >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             ref={imgRef}
                             src={src}
@@ -357,7 +352,7 @@ export default function ImageCropper({
                         {box && (
                             <div
                                 data-dir="move"
-                                className="absolute border border-white cursor-move"
+                                className={`absolute border-2 border-white cursor-move ${round ? "rounded-full" : ""}`}
                                 style={{
                                     left: box.left,
                                     top: box.top,
@@ -366,7 +361,6 @@ export default function ImageCropper({
                                     boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)",
                                 }}
                             >
-                                {/* rule-of-thirds guides */}
                                 <div className="absolute inset-0 pointer-events-none opacity-40">
                                     <div className="absolute left-1/3 top-0 bottom-0 border-l border-white" />
                                     <div className="absolute left-2/3 top-0 bottom-0 border-l border-white" />
@@ -389,7 +383,7 @@ export default function ImageCropper({
 
             {isReady && (
                 <>
-                    {/* Aspect ratio */}
+                    {!fixedAspect && (
                     <div className="space-y-1.5">
                         <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">Crop shape</span>
                         <div className="flex flex-wrap gap-2">
@@ -409,8 +403,8 @@ export default function ImageCropper({
                             ))}
                         </div>
                     </div>
+                    )}
 
-                    {/* Resize */}
                     <div className="space-y-1.5">
                         <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">Output size</span>
                         <div className="flex flex-wrap items-center gap-2">
@@ -432,7 +426,7 @@ export default function ImageCropper({
                                 <input
                                     type="number"
                                     min={1}
-                                    max={MAX_OUTPUT_SIDE}
+                                    max={maxOutputSide}
                                     value={outW}
                                     onChange={(e) => setOutWidth(Number(e.target.value))}
                                     aria-label="Output width in pixels"
@@ -442,7 +436,7 @@ export default function ImageCropper({
                                 <input
                                     type="number"
                                     min={1}
-                                    max={MAX_OUTPUT_SIDE}
+                                    max={maxOutputSide}
                                     value={outH}
                                     onChange={(e) => setOutHeight(Number(e.target.value))}
                                     aria-label="Output height in pixels"
@@ -459,7 +453,6 @@ export default function ImageCropper({
                 </>
             )}
 
-            {/* Actions */}
             <div className="flex flex-wrap gap-3 justify-end">
                 <Button
                     type="button"

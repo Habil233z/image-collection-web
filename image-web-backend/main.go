@@ -68,7 +68,18 @@ func init() {
 		bucketName = "images"
 	}
 
-	authHandlers := &auth.Database{DB: db}
+	// Avatars live in their own bucket when SUPABASE_AVATAR_BUCKET is set,
+	// otherwise they share the images bucket (under an "avatars/" folder).
+	avatarBucket := os.Getenv("SUPABASE_AVATAR_BUCKET")
+	if avatarBucket == "" {
+		avatarBucket = bucketName
+	}
+
+	authHandlers := &auth.Database{
+		DB:             db,
+		SupabaseClient: supabaseClient,
+		AvatarBucket:   avatarBucket,
+	}
 	imageHandlers := &images.Database{
 		DB:             db,
 		SupabaseClient: supabaseClient,

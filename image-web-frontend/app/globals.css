@@ -128,3 +128,110 @@
     @apply font-sans;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Image Web look & feel (sky / blue scheme)                           */
+/* ------------------------------------------------------------------ */
+@layer base {
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display), var(--font-geist-sans), system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /* Page background: the original sky gradient + soft floating light */
+  .page-bg {
+    position: relative;
+    isolation: isolate;
+    background: linear-gradient(135deg, var(--color-sky-100), var(--color-sky-200) 50%, var(--color-blue-300));
+  }
+  .page-bg::before,
+  .page-bg::after {
+    content: "";
+    position: fixed;
+    z-index: -1;
+    border-radius: 9999px;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+  .page-bg::before {
+    top: -10%; left: -8%;
+    width: 40vw; height: 40vw;
+    background: rgb(255 255 255 / 0.55);
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+  .page-bg::after {
+    bottom: -12%; right: -8%;
+    width: 38vw; height: 38vw;
+    background: color-mix(in oklab, var(--color-sky-400) 45%, transparent);
+    animation: drift 22s ease-in-out infinite alternate-reverse;
+  }
+
+  .page-bg-deep {
+    background: linear-gradient(135deg, var(--color-sky-200), var(--color-sky-300) 50%, var(--color-blue-400));
+  }
+
+  /* Frosted glass panel */
+  .glass-card {
+    background: rgb(255 255 255 / 0.78);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(18px) saturate(1.4);
+    border: 1px solid rgb(255 255 255 / 0.7);
+    box-shadow:
+      0 24px 50px -24px rgb(3 105 161 / 0.45),
+      inset 0 1px 0 rgb(255 255 255 / 0.9);
+  }
+
+  /* Text inputs */
+  .field {
+    width: 100%;
+    color: black;
+    border: 1px solid var(--color-gray-200);
+    border-radius: 0.875rem;
+    padding: 0.75rem 1rem;
+    background: rgb(249 250 251 / 0.8);
+    transition: box-shadow .2s, background .2s, border-color .2s;
+  }
+  .field:focus {
+    outline: none;
+    background: white;
+    border-color: var(--color-sky-400);
+    box-shadow: 0 0 0 4px rgb(56 189 248 / 0.25);
+  }
+
+  /* Skeleton / ghost loading */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: rgb(255 255 255 / 0.55);
+  }
+  .skeleton::after,
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.75), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+  .shimmer { position: relative; overflow: hidden; }
+
+  /* Masonry tile entrance */
+  .tile-in {
+    opacity: 0;
+    animation: tile-in .55s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+}
+
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(6vw, 5vh, 0) scale(1.15); }
+}
+@keyframes tile-in {
+  from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-bg::before, .page-bg::after, .skeleton::after, .shimmer::after, .tile-in { animation: none; opacity: 1; }
+}
