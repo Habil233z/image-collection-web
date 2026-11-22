@@ -117,7 +117,7 @@ async function getReplyLike() {
                     <div className="flex">
                         <div className="flex gap-4">
                             <div className="w-10 h-10 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
-                                <img className="h-full w-full object-cover" src="test" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png" }} alt="User Avatar" />
+                                <img className="h-full w-full object-cover" src={replyItem.avatar_url || "/user.png"} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png" }} alt="User Avatar" />
                             </div>
                             <div>
                                 <div className="flex justify-between w-full">
@@ -217,7 +217,7 @@ async function getReplyLike() {
                                 <p className="text-gray-600 break-all mt-1 text-xs sm:text-sm text-right">{replyItem.reply}</p>
                             </div>
                             <div className="w-10 h-10 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
-                                <img className="h-full w-full object-cover" src="test" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png" }} alt="User Avatar" />
+                                <img className="h-full w-full object-cover" src={replyItem.avatar_url || "/user.png"} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png" }} alt="User Avatar" />
                             </div>
                         </div>
                     </div>

@@ -20,15 +20,20 @@ export default function Home() {
   const [images, setImages] = useState<any[] | null>(null)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  // file currently being cropped/resized (null = cropper closed)
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [cropUrl, setCropUrl] = useState<string | null>(null)
   const [open, setOpen] = useState<boolean>(false)
   const [page, setPage] = useState<number>(1)
   const [hasMore, setHasMore] = useState<boolean>(true)
+
+  // uploads that are still in flight: shown as "ghost" tiles at the top of the grid
   const [pending, setPending] = useState<PendingUpload[]>([])
+
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<boolean>(false)
 
+  // silent = refresh the grid in place without swapping it for the loading skeleton
   async function getImages(pageNum: number, silent = false) {
     if (!silent) setLoading(true)
     try {
@@ -66,9 +71,9 @@ export default function Home() {
 
   function handleImageChange(e: any) {
     const file = e.target.files?.[0]
-    e.target.value = ""
+    e.target.value = "" // allow re-picking the same file
     if (file) {
-      openCropper(file)
+      openCropper(file) // let the user crop / resize before it is used
     }
   }
 
@@ -93,6 +98,8 @@ export default function Home() {
     imageData.append("imageFile", selectedFile)
     imageData.append("imageName", title)
 
+    // Optimistic UI: show a ghost tile immediately, with its own preview URL
+    // (the dialog's preview URL is revoked when the dialog resets).
     const ghost: PendingUpload = { id: Date.now(), url: URL.createObjectURL(selectedFile), title }
     setPending((prev) => [ghost, ...prev])
     setOpen(false)
@@ -101,8 +108,9 @@ export default function Home() {
 
     try {
       await api.post("api/upload", imageData, { headers: { "Content-Type": undefined } })
+      // the newest image is on page 1
       if (page !== 1) {
-        setPage(1)
+        setPage(1) // the page effect reloads the grid
       } else {
         await getImages(1, true)
       }
@@ -137,6 +145,7 @@ export default function Home() {
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900">
             Discover <span className="bg-linear-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">images</span>
           </h2>
+          <p className="mt-2 text-gray-600">Every picture keeps its own shape. Tap one to see it up close.</p>
         </section>
 
         {loading && (
@@ -175,6 +184,7 @@ export default function Home() {
                     className="relative mb-4 break-inside-avoid overflow-hidden rounded-2xl shadow-lg ring-2 ring-sky-400/70 bg-white/60"
                     aria-busy="true"
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={p.url} alt={p.title} className="block w-full h-auto opacity-60 blur-[2px] scale-105" />
                     <div className="shimmer absolute inset-0" />
                     <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-linear-to-t from-black/70 to-transparent px-3 pt-8 pb-2.5 text-white text-sm">
@@ -191,6 +201,7 @@ export default function Home() {
                     className="tile-in group relative block mb-4 break-inside-avoid overflow-hidden rounded-2xl bg-white/50 shadow-md hover:shadow-2xl hover:shadow-sky-900/25 hover:-translate-y-1 transition duration-300"
                     style={{ animationDelay: `${Math.min(i, 20) * 35}ms` }}
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={image.image_url}
                       alt={image.title}

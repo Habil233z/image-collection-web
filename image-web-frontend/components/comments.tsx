@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { getStoredAvatar } from "@/lib/auth";
 import Replies from "@/components/replies";
 
 interface CommentItemProps {
@@ -166,6 +167,7 @@ export default function Comments({
             id: tempReplyId,
             reply: reply,
             username: username || "You",
+            avatar_url: getStoredAvatar() || "",
             created_at: new Date().toISOString(),
             pending: true,
         };
@@ -203,7 +205,7 @@ export default function Comments({
             <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
-                        <img className="h-full w-full object-cover" src="test" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png" }} alt="User Avatar" />
+                        <img className="h-full w-full object-cover" src={commentItem.avatar_url || "/user.png"} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png" }} alt="User Avatar" />
                     </div>
                     <div>
                         <div className="flex justify-between w-full">

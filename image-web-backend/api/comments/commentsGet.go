@@ -27,8 +27,8 @@ func (d *Database) GetComments(c *gin.Context) {
 	comments.user_id,
 	comments.comment,
 	comments.created_at,
-	users.username
-	s
+	users.username,
+	COALESCE(users.avatar_url, '')
 	FROM comments
 	JOIN users ON comments.user_id = users.id
 	WHERE comments.image_id = $1
@@ -44,7 +44,7 @@ func (d *Database) GetComments(c *gin.Context) {
 	var comments []Comments
 	for rows.Next() {
 		var comment Comments
-		if err := rows.Scan(&comment.ID, &comment.ImageID, &comment.UserID, &comment.Comment, &comment.CreatedAt, &comment.Username); err != nil {
+		if err := rows.Scan(&comment.ID, &comment.ImageID, &comment.UserID, &comment.Comment, &comment.CreatedAt, &comment.Username, &comment.AvatarURL); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse image comments" + err.Error()})
 			return
 		}

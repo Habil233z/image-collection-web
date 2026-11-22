@@ -16,4 +16,5 @@ type Comments struct {
 	Comment   string    `json:"comment" db:"comment"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	Username  string    `json:"username"`
+	AvatarURL string    `json:"avatar_url"`
 }

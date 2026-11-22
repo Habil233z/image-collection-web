@@ -17,7 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Comments from "@/components/comments";
-import { getStoredUsername, loginUrl } from "@/lib/auth";
+import { getStoredAvatar, getStoredUsername, loginUrl } from "@/lib/auth";
 import { downloadImage } from "@/lib/download";
 import { usePageTitle } from "@/lib/usePageTitle";
 
@@ -35,7 +35,6 @@ export default function ImageDetail() {
 
     const [downloading, setDownloading] = useState<boolean>(false)
 
-    // tab title follows the image once it is loaded
     usePageTitle(imageDetail?.title)
 
     const [page, setPage] = useState<number>(1)
@@ -87,7 +86,6 @@ export default function ImageDetail() {
 
     async function handleLike() {
         if (!username) {
-            // liking needs an account
             router.push(loginUrl(`/image/${id}`))
             return
         }
@@ -127,8 +125,9 @@ export default function ImageDetail() {
             id: tempCommentId,
             comment: comment,
             username: username || "You",
+            avatar_url: getStoredAvatar() || "",
             created_at: new Date().toISOString(),
-            pending: true, // rendered as a ghost until the server copy replaces it
+            pending: true,
         }
 
         setComments((prev) => [optimisticComment, ...prev])
@@ -176,8 +175,6 @@ export default function ImageDetail() {
         }
     }, [page, id]);
 
-    //Test
-
     return (
         <div className="page-bg min-h-screen w-full flex flex-col pb-16">
             <Header username={username} />
@@ -187,7 +184,6 @@ export default function ImageDetail() {
                     <div className="glass-card tile-in rounded-3xl p-5 sm:p-8 w-full max-w-6xl flex flex-col items-center mb-8">
                         <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-center text-gray-900 mb-6">{imageDetail.title}</h2>
                         <div className="w-full flex flex-col items-center">
-                            {/* natural size: the image is never stretched, only limited to the viewport height */}
                             <img 
                                 src={`${imageDetail.image_url}`} 
                                 className="max-h-150 max-w-full w-auto h-auto rounded-2xl object-contain shadow-xl shadow-sky-900/20 mb-6" 
@@ -195,7 +191,6 @@ export default function ImageDetail() {
                             />
 
                             <div className="flex flex-wrap justify-between items-center gap-4 w-full px-1 text-gray-600 border-t border-gray-200/70 pt-4">
-                                {/* author */}
                                 <div className="flex items-center gap-3">
                                     <img
                                         src={imageDetail.avatar_url || "/user.png"}
@@ -211,7 +206,6 @@ export default function ImageDetail() {
                                     </div>
                                 </div>
 
-                                {/* actions */}
                                 <div className="flex items-center gap-3">
                                     <Button
                                         onClick={handleDownload}

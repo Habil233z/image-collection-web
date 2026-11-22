@@ -23,6 +23,7 @@ type ReplyResponse struct {
 	CommentId int       `json:"comment_id" db:"comment_id"`
 	UserId    int       `json:"user_id" db:"user_id"`
 	Username  string    `json:"username" db:"username"`
+	AvatarURL string    `json:"avatar_url" db:"avatar_url"`
 	Reply     string    `json:"reply" db:"reply"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }

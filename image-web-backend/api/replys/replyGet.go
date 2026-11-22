@@ -21,6 +21,7 @@ func (d *Database) GetReplies(c *gin.Context) {
 		replies.comment_id, 
 		replies.user_id, 
 		users.username, 
+		COALESCE(users.avatar_url, ''),
 		replies.reply, 
 		replies.created_at
 
@@ -39,7 +40,7 @@ func (d *Database) GetReplies(c *gin.Context) {
 	replies := []ReplyResponse{}
 	for rows.Next() {
 		var reply ReplyResponse
-		if err := rows.Scan(&reply.Id, &reply.CommentId, &reply.UserId, &reply.Username, &reply.Reply, &reply.CreatedAt); err != nil {
+		if err := rows.Scan(&reply.Id, &reply.CommentId, &reply.UserId, &reply.Username, &reply.AvatarURL, &reply.Reply, &reply.CreatedAt); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse replies: " + err.Error()})
 			return
 		}
