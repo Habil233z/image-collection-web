@@ -8,9 +8,11 @@ import (
 	"image-web-backend/api/auth"
 	"image-web-backend/api/chat"
 	"image-web-backend/api/comments"
+	"image-web-backend/api/explore"
 	"image-web-backend/api/images"
 	"image-web-backend/api/likes"
 	"image-web-backend/api/replys"
+	"image-web-backend/api/search"
 	"image-web-backend/api/social"
 	"image-web-backend/resources/database"
 	"image-web-backend/resources/middleware/authMiddleware"
@@ -84,6 +86,8 @@ func init() {
 	replyHandlers := &replys.Database{DB: db}
 	socialHandlers := &social.Database{DB: db}
 	chatHandlers := &chat.Database{DB: db}
+	searchHandlers := &search.Database{DB: db}
+	exploreHandlers := &explore.Database{DB: db}
 
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -105,6 +109,16 @@ func init() {
 	router.GET("/image/:id/comment/:commentId/replies", replyHandlers.GetReplies)
 	router.GET("/image/:id/comment/:commentId/replies/:replyId/likes", likeHandlers.GetLikeReply)
 	router.GET("/image/:id/comment/:commentId/replies/count", replyHandlers.GetReplyCount)
+
+	router.GET("/search/images", searchHandlers.SearchImages)
+	router.GET("/search/users", searchHandlers.SearchUsers)
+	router.GET("/search/tags", searchHandlers.SearchTags)
+
+	exploreGroup := router.Group("/explore")
+	exploreGroup.Use(authMiddleware.OptionalAuth())
+	{
+		exploreGroup.GET("", exploreHandlers.GetExplore)
+	}
 
 	users := router.Group("/users")
 	users.Use(authMiddleware.OptionalAuth())

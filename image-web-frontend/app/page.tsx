@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import api from "@/lib/api"
 import { getStoredUsername } from "@/lib/auth"
 import ImageCropper from "@/components/image-cropper"
+import TagInput from "@/components/tag-input"
 import Link from "next/link"
 
 // Heights (as width/height ratios) for the placeholder tiles shown while the first page loads
@@ -24,6 +25,7 @@ export default function Home() {
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [cropUrl, setCropUrl] = useState<string | null>(null)
   const [open, setOpen] = useState<boolean>(false)
+  const [uploadTags, setUploadTags] = useState<string[]>([])
   const [page, setPage] = useState<number>(1)
   const [hasMore, setHasMore] = useState<boolean>(true)
 
@@ -82,6 +84,7 @@ export default function Home() {
     if (!next) {
       closeCropper()
       setFinalFile(null)
+      setUploadTags([])
     }
   }
 
@@ -97,6 +100,7 @@ export default function Home() {
     const imageData = new FormData()
     imageData.append("imageFile", selectedFile)
     imageData.append("imageName", title)
+    imageData.append("tags", uploadTags.join(","))
 
     // Optimistic UI: show a ghost tile immediately, with its own preview URL
     // (the dialog's preview URL is revoked when the dialog resets).
@@ -105,6 +109,7 @@ export default function Home() {
     setOpen(false)
     closeCropper()
     setFinalFile(null)
+    setUploadTags([])
 
     try {
       await api.post("api/upload", imageData, { headers: { "Content-Type": undefined } })
@@ -310,6 +315,8 @@ export default function Home() {
                     className="field text-base"
                     required
                   />
+
+                  <TagInput tags={uploadTags} onChange={setUploadTags} />
 
                   <Button type="submit" className="w-full bg-neutral-900 hover:bg-black text-white font-medium py-3 rounded-full transition shadow-lg text-base mt-2">
                     Upload image

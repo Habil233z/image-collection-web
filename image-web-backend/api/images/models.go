@@ -21,4 +21,5 @@ type Image struct {
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	Username  string    `json:"username" db:"username"`
 	AvatarURL string    `json:"avatar_url" db:"avatar_url"`
+	Tags      []string  `json:"tags,omitempty"`
 }

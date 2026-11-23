@@ -2,6 +2,7 @@
 
 import Header from "@/components/header"
 import ImageCropper from "@/components/image-cropper"
+import TagInput from "@/components/tag-input"
 import api from "@/lib/api"
 import { getStoredUsername, loginUrl } from "@/lib/auth"
 import { useRouter, useParams } from "next/navigation"
@@ -16,6 +17,7 @@ export default function EditImage() {
 
     const [username, setUsername] = useState<string | null>(null)
     const [imageName, setImageName] = useState<string>("")
+    const [tags, setTags] = useState<string[]>([])
     const [currentImagePath, setCurrentImagePath] = useState<string | null>(null)
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -30,6 +32,7 @@ export default function EditImage() {
             const data = response.data.data
             
             setImageName(data.title)
+            setTags(data.tags || [])
             setCurrentImagePath(data.image_url)
             
             const storedUser = getStoredUsername()
@@ -84,6 +87,7 @@ export default function EditImage() {
         e.preventDefault()
         const formData = new FormData()
         formData.append("title", imageName)
+        formData.append("tags", tags.join(","))
         if (imageFile) {
             formData.append("imageFile", imageFile)
         }
@@ -144,6 +148,11 @@ export default function EditImage() {
                                     className="field text-base" 
                                     required
                                 />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold uppercase tracking-wider text-gray-600">Tags</label>
+                                <TagInput tags={tags} onChange={setTags} />
                             </div>
 
                             <div className="flex flex-col w-full justify-center items-center space-y-2">

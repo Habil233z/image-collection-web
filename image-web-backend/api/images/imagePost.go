@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -62,11 +63,13 @@ func (d *Database) UploadImage(c *gin.Context) {
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	publicURL := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", supabaseURL, d.BucketName, fileName)
 
-	query := `INSERT INTO images (user_id, title, image_url, created_at) VALUES ($1, $2, $3, $4) RETURNING id`
+	tags := strings.Join(parseTags(c.PostFormArray("tags")), ",")
+
+	query := `INSERT INTO images (user_id, title, image_url, created_at, tags) VALUES ($1, $2, $3, $4, COALESCE(string_to_array(NULLIF($5::text, ''), ','), '{}')) RETURNING id`
 	var imageID int
 	createdAt := time.Now()
 
-	err = d.DB.Pool.QueryRow(c.Request.Context(), query, userID, title, publicURL, createdAt).Scan(&imageID)
+	err = d.DB.Pool.QueryRow(c.Request.Context(), query, userID, title, publicURL, createdAt, tags).Scan(&imageID)
 	if err != nil {
 		_, _ = d.SupabaseClient.RemoveFile(d.BucketName, []string{fileName})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image record to database"})

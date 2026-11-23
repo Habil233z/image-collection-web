@@ -182,7 +182,16 @@ export default function ImageDetail() {
             <main className="flex-1 w-full px-6 sm:px-12 flex flex-col items-center">
                 {imageDetail && (
                     <div className="glass-card tile-in rounded-3xl p-5 sm:p-8 w-full max-w-6xl flex flex-col items-center mb-8">
-                        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-center text-gray-900 mb-6">{imageDetail.title}</h2>
+                        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-center text-gray-900 mb-4">{imageDetail.title}</h2>
+                        {imageDetail.tags && imageDetail.tags.length > 0 && (
+                            <div className="flex flex-wrap justify-center gap-2 mb-6">
+                                {imageDetail.tags.map((tag: string) => (
+                                    <Link key={tag} href={`/search?tag=${encodeURIComponent(tag)}`} className="rounded-full bg-sky-100 hover:bg-sky-200 text-sky-700 text-sm font-medium px-3 py-1 transition">
+                                        #{tag}
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
                         <div className="w-full flex flex-col items-center">
                             <img 
                                 src={`${imageDetail.image_url}`} 

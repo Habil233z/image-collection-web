@@ -55,7 +55,6 @@ func (d *Database) EditImage(c *gin.Context) {
 	title := c.PostForm("title")
 	newURL := existingURL
 
-	// FIXED: Look for "imageFile" to match frontend FormData
 	fileHeader, err := c.FormFile("imageFile")
 	if err == nil {
 		file, err := fileHeader.Open()
@@ -86,8 +85,16 @@ func (d *Database) EditImage(c *gin.Context) {
 		_, _ = d.SupabaseClient.RemoveFile(d.BucketName, []string{oldFileName})
 	}
 
-	queryUpdate := `UPDATE images SET title = COALESCE(NULLIF($1, ''), title), image_url = $2, updated_at = NOW() WHERE id = $3`
-	_, err = d.DB.Pool.Exec(c.Request.Context(), queryUpdate, title, newURL, imageID)
+	rawTags, hasTags := c.GetPostFormArray("tags")
+	tags := strings.Join(parseTags(rawTags), ",")
+
+	queryUpdate := `UPDATE images SET
+		title = COALESCE(NULLIF($1, ''), title),
+		image_url = $2,
+		tags = CASE WHEN $4::boolean THEN COALESCE(string_to_array(NULLIF($5::text, ''), ','), '{}') ELSE tags END,
+		updated_at = NOW()
+	WHERE id = $3`
+	_, err = d.DB.Pool.Exec(c.Request.Context(), queryUpdate, title, newURL, imageID, hasTags, tags)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update image record in database"})
 		return

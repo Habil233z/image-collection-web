@@ -4,6 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import api from "@/lib/api";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import SearchBox from "@/components/search-box";
 import { clearSession, getStoredAvatar, getStoredUsername, setStoredAvatar } from "@/lib/auth";
 
 interface HeaderProps {
@@ -58,13 +59,22 @@ export default function Header({ username }: HeaderProps) {
         <div className="bg-white h-10 w-10 rounded-full flex items-center justify-center text-lg shadow-md ring-2 ring-white/50 group-hover:rotate-6 group-hover:scale-105 transition duration-300">
           🖼️
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white drop-shadow-sm">Image Web</h1>
+        <h1 className="hidden sm:block text-xl sm:text-2xl font-bold tracking-tight text-white drop-shadow-sm">Image Web</h1>
       </Link>
+
+      <SearchBox className="hidden md:block flex-1 max-w-md mx-4" />
+
+      <div className="md:hidden flex-1 flex justify-end pr-2">
+        <Link href="/search" aria-label="Search" className="h-10 w-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition">🔍</Link>
+      </div>
 
       {!mounted ? (
         <div className="h-10 w-32" />
       ) : currentUser ? (
         <div className="flex items-center gap-2 sm:gap-4">
+          <Link href="/explore" className="hidden lg:flex items-center gap-1.5 font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition">
+            <span aria-hidden>✨</span> Explore
+          </Link>
           <Link href="/chat" className="hidden sm:flex items-center gap-1.5 font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition">
             <span aria-hidden>💬</span> Messages
           </Link>
@@ -93,6 +103,11 @@ export default function Header({ username }: HeaderProps) {
                     Liked Images
                   </DropdownMenuItem>
                 </Link>
+                <Link href="/explore">
+                  <DropdownMenuItem className="cursor-pointer font-medium rounded-xl px-3 py-2 focus:bg-sky-50 focus:text-sky-600 transition text-gray-800">
+                    Explore
+                  </DropdownMenuItem>
+                </Link>
                 <Link href="/chat">
                   <DropdownMenuItem className="cursor-pointer font-medium rounded-xl px-3 py-2 focus:bg-sky-50 focus:text-sky-600 transition text-gray-800">
                     Messages
@@ -118,6 +133,9 @@ export default function Header({ username }: HeaderProps) {
         </div>
       ) : (
         <div className="flex items-center gap-2">
+          <Link href="/explore" className="hidden sm:block font-semibold text-white hover:bg-white/15 px-4 py-2 rounded-full transition">
+            Explore
+          </Link>
           <Link href="/login" className="font-semibold text-white hover:bg-white/15 px-4 py-2 rounded-full transition">
             Log In
           </Link>
