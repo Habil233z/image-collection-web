@@ -115,12 +115,12 @@ async function getReplyLike() {
             
                 {isOwner ? (
                     <div id={replyItem.id} className={`bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 mr-10${replyItem.pending ? " shimmer opacity-60 pointer-events-none select-none" : ""}`}>
-                    <div className="flex">
-                        <div className="flex gap-4">
+                    <div className="flex w-full justify-between">
+                        <div className="flex gap-4 w-full">
                             <div className="w-10 h-10 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
                                 <img className="h-full w-full object-cover" src={replyItem.avatar_url || "/user.png"} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png" }} alt="User Avatar" />
                             </div>
-                            <div>
+                            <div className="w-full">
                                 <div className="flex justify-between w-full">
                                     {replyItem.user_id ? (
                                         <Link href={`/user/${replyItem.user_id}`} className="text-sm font-semibold text-gray-900 hover:text-sky-600 transition">{replyItem.username}</Link>
@@ -180,7 +180,7 @@ async function getReplyLike() {
                 ) : (
                 <div id={replyItem.id} className={`bg-gray-50/80 p-3 rounded-xl border border-gray-100 flex flex-col gap-1 ml-10${replyItem.pending ? " shimmer opacity-60 pointer-events-none select-none" : ""}`}>
                     <div className="flex items-start justify-between">
-                        <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-1">
                             {username === replyItem.username && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger className="focus:outline-none">
@@ -211,12 +211,12 @@ async function getReplyLike() {
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             )}
+                            <p className="text-gray-400 mr-4 text-xs">{replyItem.pending ? "Sending…" : new Date(replyItem.created_at).toLocaleDateString()}</p>
                         </div>
 
                         <div className="flex items-start gap-4">
                             <div className="text-right">
                                 <div className="flex justify-between w-full">
-                                    <p className="text-gray-400 mr-4 text-xs">{replyItem.pending ? "Sending…" : new Date(replyItem.created_at).toLocaleDateString()}</p>
                                     {replyItem.user_id ? (
                                         <Link href={`/user/${replyItem.user_id}`} className="text-sm font-semibold text-gray-900 hover:text-sky-600 transition">{replyItem.username}</Link>
                                     ) : (
@@ -242,9 +242,6 @@ async function getReplyLike() {
                     </div>
                 </div>
                 )}
-
-
-            
 
             <Dialog open={isEditReplyDialogOpen} onOpenChange={setIsEditReplyDialogOpen}>
                 <DialogContent className="sm:max-w-md rounded-3xl bg-white/95 backdrop-blur-md border border-white/60 p-6">

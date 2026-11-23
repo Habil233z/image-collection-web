@@ -260,11 +260,11 @@ export default function ImageDetail() {
                     </div>
                 )}
 
-                <div className="w-full max-w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 p-6 sm:p-8 flex flex-col">
+                <div className="w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 p-6 sm:p-8 flex flex-col">
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 text-center">Comments</h2>
                     {comments && comments.length > 0 ? (
                         <>
-                        <div className="flex flex-wrap gap-4 w-full mb-6">
+                        <div className="flex flex-wrap gap-4 max-w-full mb-6 max-sm:flex max-sm:justify-center">
                             {comments.map((commentItem) => (
                                 <Comments 
                                     key={commentItem.id}

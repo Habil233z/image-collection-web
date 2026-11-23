@@ -202,13 +202,13 @@ export default function Comments({
 
     return (
         <>
-        <div id={commentItem.id} key={commentItem.id} className={`bg-white/80 backdrop-blur-xs rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm transition hover:shadow-md flex flex-col justify-between self-start${commentItem.pending ? " shimmer opacity-60 pointer-events-none select-none" : ""}`}>
-            <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
+        <div id={commentItem.id} key={commentItem.id} className={`bg-white/80 backdrop-blur-xs rounded-2xl border border-white/80 p-4 sm:p-5 shadow-sm transition hover:shadow-md flex flex-col justify-between self-start${commentItem.pending ? " shimmer opacity-60 pointer-events-none select-none" : ""} max-sm:w-full`}>
+            <div className="flex w-full items-start justify-between">
+                <div className="flex items-start gap-4 w-full">
                     <div className="w-12 h-12 rounded-full bg-white overflow-hidden border border-gray-200 shrink-0 shadow-inner">
                         <img className="h-full w-full object-cover" src={commentItem.avatar_url || "/user.png"} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/user.png" }} alt="User Avatar" />
                     </div>
-                    <div>
+                    <div className="w-full">
                         <div className="flex justify-between w-full">
                             {commentItem.user_id ? (
                                 <Link href={`/user/${commentItem.user_id}`} className="text-base font-semibold text-gray-900 hover:text-sky-600 transition">{commentItem.username}</Link>
